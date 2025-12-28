@@ -14,6 +14,7 @@ interface PlayerJoinProps {
     alreadyConnected: boolean;
   } | null;
   onCancelConflict?: () => void;
+  error?: string;
 }
 
 export default function PlayerJoin({
@@ -25,6 +26,7 @@ export default function PlayerJoin({
   pendingJoin = false,
   conflictData = null,
   onCancelConflict,
+  error,
 }: PlayerJoinProps) {
   const [name, setName] = useState('');
 
@@ -105,6 +107,14 @@ export default function PlayerJoin({
                   autoFocus
                 />
               </div>
+
+              {error && (
+                <div className="p-4 rounded-xl bg-crimson/10 border border-crimson/20 text-crimson-light text-center animate-in fade-in zoom-in-95 duration-300">
+                  <p className="font-semibold text-sm sm:text-base">
+                    <span className="mr-2">⚠️</span> {error}
+                  </p>
+                </div>
+              )}
 
               <button
                 type="submit"

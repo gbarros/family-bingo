@@ -102,16 +102,43 @@ export class GameEngine {
         return updatedPlayers;
     }
 
+    async updatePlayerMarking(playerId: string, position: number, marked: boolean): Promise<void> {
+        const player = await this.storage.getPlayer(playerId);
+        if (player) {
+            const markings = [...player.markings];
+            markings[position] = marked;
+
+            const updatedPlayer = { ...player, markings, lastActive: Date.now() };
+            await this.storage.addPlayer(updatedPlayer);
+
+            // We don't broadcast this to everyone to avoid noise, 
+            // but the host UI will correct itself on next sync/poll
+        }
+    }
+
     async validateBingo(playerId: string): Promise<{ isValid: boolean; winnerName?: string; pattern?: string }> {
         const player = await this.storage.getPlayer(playerId);
         const session = await this.storage.getSession();
 
         if (!player || !session) return { isValid: false };
 
-        const isValid = validateBingo(player.cardData, player.markings, session.gameMode);
+        // Server-Authoritative Validation:
+        // Instead of believing the player's markings, we verify if the numbers on their card
+        // have actually been drawn.
+        const drawnSet = new Set(await this.storage.getDrawnNumbers());
+
+        // Construct the "true" markings based on drawn numbers
+        // Position 12 (center) is always marked (FREE)
+        const validatedMarkings = player.cardData.map((num, index) => {
+            if (index === 12) return true; // FREE space
+            return drawnSet.has(num);
+        });
+
+        // Use the validated markings for checking bingo
+        const isValid = validateBingo(player.cardData, validatedMarkings, session.gameMode);
 
         if (isValid) {
-            const pattern = getWinningPattern(player.cardData, player.markings, session.gameMode);
+            const pattern = getWinningPattern(player.cardData, validatedMarkings, session.gameMode);
             this.emit('bingo', {
                 playerName: player.name,
                 pattern: pattern || 'BINGO'

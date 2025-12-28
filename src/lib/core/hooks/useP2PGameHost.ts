@@ -148,13 +148,18 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
         });
 
         peer.on('connection', (conn) => {
-            const clientSecret = conn.metadata?.secret;
-            if (clientSecret !== secretRef.current) {
-                conn.close();
-                return;
-            }
-
             conn.on('open', () => {
+                const clientSecret = conn.metadata?.secret;
+                if (clientSecret !== secretRef.current) {
+                    console.log(`[P2P Host] Rejecting connection from ${conn.peer} (Invalid secret)`);
+                    conn.send({
+                        type: 'error',
+                        message: 'Senha da sala incorreta. Utilize o link oficial ou QR Code.'
+                    });
+                    setTimeout(() => conn.close(), 500);
+                    return;
+                }
+
                 console.log(`[P2P Host] New connection from ${conn.peer}`);
                 connectionsRef.current.set(conn.peer, conn);
                 lastPingRef.current.set(conn.peer, Date.now());
@@ -195,6 +200,23 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                         drawnNumbers: drawnNumbers || []
                     });
                     syncPlayers();
+                }
+                if (data.type === 'mark') {
+                    const playerId = data.playerId; // We expect client to send their ID, or we infer from conn? 
+                    // Better to infer from the connection mapping or just trust the connected flow if simpler?
+                    // Actually, the client just sends { type: 'mark', position, marked }.
+                    // We need to find which player corresponds to this connection.
+                    // We can reverse lookup or store metadata.
+
+                    // Let's iterate players to find matching peerId
+                    const players = await storage.getAllPlayers();
+                    const player = players.find(p => p.peerId === conn.peer);
+
+                    if (player) {
+                        await engine.updatePlayerMarking(player.id, data.position, data.marked);
+                        // Trigger sync to update UI (dots/progress)
+                        syncPlayers();
+                    }
                 }
                 if (data.type === 'ping') {
                     lastPingRef.current.set(conn.peer, Date.now());

@@ -27,8 +27,6 @@ export function generateCard(): number[] {
     const shuffled = shuffleArray(available);
     const selected = shuffled.slice(0, CARD_SIZE);
 
-    // Sort numbers in ascending order for better readability
-    selected.sort((a, b) => a - b);
 
     // Add to card
     for (const num of selected) {

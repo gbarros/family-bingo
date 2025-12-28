@@ -21,6 +21,9 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
     const connRef = useRef<DataConnection | null>(null);
     const requestedNameRef = useRef<string | null>(null);
 
+    const retryCountRef = useRef(0);
+    const MAX_RETRIES = 5;
+
     // Use a ref to always access the latest handler (fixes stale closure issue)
     const handleIncomingDataRef = useRef<(data: any) => void>(() => { });
 
@@ -111,6 +114,7 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
     const setupConnection = useCallback((conn: DataConnection) => {
         conn.on('open', () => {
             console.log('[P2P Client] Connection to host established');
+            retryCountRef.current = 0; // Reset retries on success
             setState(prev => ({ ...prev, isConnected: true, error: undefined }));
             connRef.current = conn;
 
@@ -162,11 +166,24 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
             });
 
             peer.on('error', (err) => {
-                console.error('[P2P Client] Peer error:', err.type);
                 if (err.type === 'peer-unavailable') {
-                    // Host not found, will retry via effect
+                    retryCountRef.current += 1;
+                    console.warn(`[P2P Client] Peer unavailable (Attempt ${retryCountRef.current}/${MAX_RETRIES})`);
+
+                    if (retryCountRef.current >= MAX_RETRIES) {
+                        setState(prev => ({
+                            ...prev,
+                            isConnected: false,
+                            error: "Não foi possível encontrar a sala após várias tentativas. Verifique o link ou se o anfitrião está online."
+                        }));
+                    } else {
+                        // Keep error undefined so the interval keeps retrying
+                        setState(prev => ({ ...prev, isConnected: false }));
+                    }
+                } else {
+                    console.error('[P2P Client] Peer error:', err.type);
+                    setState(prev => ({ ...prev, isConnected: false }));
                 }
-                setState(prev => ({ ...prev, isConnected: false }));
             });
         } else if (peerRef.current.open) {
             console.log('[P2P Client] Reconnecting to host...');
@@ -195,14 +212,14 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
         if (!hostId) return;
 
         const monitor = setInterval(() => {
-            if (!state.isConnected) {
+            if (!state.isConnected && !state.error) {
                 console.log('[P2P Client] Not connected. Attempting reconnection...');
                 connect(hostId, secret);
             }
         }, 3000);
 
         return () => clearInterval(monitor);
-    }, [hostId, secret, state.isConnected, connect]);
+    }, [hostId, secret, state.isConnected, state.error, connect]);
 
     // Initial connection
     useEffect(() => {

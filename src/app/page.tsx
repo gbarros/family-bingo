@@ -18,10 +18,10 @@ export default function LandingPage() {
         {/* Header section with high-end typography */}
         <div className="text-center space-y-4 mb-16 animate-in fade-in slide-in-from-top-12 duration-1000">
           <h1 className="text-6xl md:text-8xl font-display font-bold text-gradient-gold tracking-tight leading-tight">
-            FAMILY BINGO
+            BINGO EM FAMÍLIA
           </h1>
           <p className="text-xl md:text-2xl text-ivory/80 font-light tracking-widest uppercase">
-            Transform Your Gatherings Into Memories
+            Transforme seus encontros em memórias
           </p>
           <div className="flex items-center justify-center gap-4 py-6">
             <span className="h-px w-12 bg-gold-light/40" />
@@ -29,16 +29,17 @@ export default function LandingPage() {
             <span className="h-px w-12 bg-gold-light/40" />
             <div className="absolute top-0 right-0 p-4">
                <span className="text-xs font-mono text-ivory/20 uppercase tracking-widest">
-                 Mode: {process.env.NEXT_PUBLIC_GAME_MODE || 'server'}
+                 Modo: {process.env.NEXT_PUBLIC_GAME_MODE || 'server'}
                </span>
             </div>
           </div>
         </div>
 
         {/* Action Grid */}
-        <div className="grid md:grid-cols-2 gap-8 px-4">
+        <div className={`grid ${!isP2P ? 'md:grid-cols-2' : 'grid-cols-1 max-w-lg mx-auto'} gap-8 px-4`}>
           
-          {/* Join Path */}
+          {/* Join Path - Only visible in Server mode */}
+          {!isP2P && (
           <Link href="/play" className="group h-full">
             <div className="h-full p-8 rounded-3xl bg-cocoa-light/30 backdrop-blur-xl border border-ivory/10 hover:border-gold-light/40 transition-all duration-500 hover:-translate-y-2 flex flex-col justify-between group overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-br from-gold-light/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -47,19 +48,20 @@ export default function LandingPage() {
                   👤
                 </div>
                 <h2 className="text-3xl font-display font-bold text-ivory group-hover:text-gold-light transition-colors">
-                  Join a Game
+                  Entrar no Jogo
                 </h2>
                 <p className="text-ivory/60 leading-relaxed">
-                  Enter a room to play with your friends and family. Score BINGOs and celebrate together!
+                  Entre em uma sala para jogar com seus amigos e família. Faça BINGOs e comemore junto!
                 </p>
               </div>
               <div className="mt-8 relative z-10">
                 <span className="inline-flex items-center text-sm font-bold uppercase tracking-widest text-gold-light group-hover:gap-2 transition-all">
-                  Participate <span className="text-xl">→</span>
+                  Participar <span className="text-xl">→</span>
                 </span>
               </div>
             </div>
           </Link>
+          )}
 
           {/* Host Path - Conditional */}
           {isP2P ? (
@@ -71,16 +73,16 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <h2 className="text-3xl font-display font-bold text-ivory group-hover:text-gold-light transition-colors flex items-center gap-2">
-                       Host Game
+                       Hospedar Jogo
                     </h2>
                     <p className="text-ivory/60 leading-relaxed mt-2">
-                      Start a new P2P game instantly. No server setup required.
+                      Comece um novo jogo P2P instantaneamente. Sem necessidade de configurar servidor.
                     </p>
                   </div>
                 </div>
                  <div className="mt-8 relative z-10">
                   <span className="inline-flex items-center text-sm font-bold uppercase tracking-widest text-gold-light group-hover:gap-2 transition-all">
-                    Start Hosting <span className="text-xl">→</span>
+                    Começar a Hospedar <span className="text-xl">→</span>
                   </span>
                 </div>
               </div>
@@ -94,16 +96,16 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <h2 className="text-3xl font-display font-bold text-ivory group-hover:text-gold-light transition-colors flex items-center gap-2">
-                      Manage Server
+                      Gerenciar Servidor
                     </h2>
                     <p className="text-ivory/60 leading-relaxed mt-2">
-                      Access the dedicated server dashboard to manage persistent games.
+                      Acesse o painel do servidor dedicado para gerenciar jogos persistentes.
                     </p>
                   </div>
                 </div>
                  <div className="mt-8 relative z-10">
                   <span className="inline-flex items-center text-sm font-bold uppercase tracking-widest text-gold-light group-hover:gap-2 transition-all">
-                    Access System <span className="text-xl">→</span>
+                    Acessar Sistema <span className="text-xl">→</span>
                   </span>
                 </div>
               </div>
@@ -115,7 +117,7 @@ export default function LandingPage() {
         {/* Footer info */}
         <div className="mt-20 text-center animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-500">
           <p className="text-ivory/40 text-sm italic tracking-wide">
-            "The magic of Christmas is even better when shared."
+            "A magia do Natal é ainda melhor quando compartilhada."
           </p>
         </div>
       </div>

@@ -22,12 +22,9 @@ export default function PlayerStatusPanel({ players, onExpand }: PlayerStatusPan
     iconSizeClass = 'text-sm';
   }
 
-  // Sort: Connected first, then by name
+  // Sort: Alphabetical order (stable) to prevent jumping
   const sortedPlayers = [...players].sort((a, b) => {
-    if (a.connected === b.connected) {
-      return a.name.localeCompare(b.name);
-    }
-    return a.connected ? -1 : 1;
+    return a.name.localeCompare(b.name);
   });
 
   return (
@@ -56,9 +53,9 @@ export default function PlayerStatusPanel({ players, onExpand }: PlayerStatusPan
             className="grid grid-flow-col gap-x-3 h-full"
             style={{ gridTemplateRows: `repeat(${ROW_LIMIT}, 1fr)` }}
           >
-            {sortedPlayers.map((player, idx) => (
+            {sortedPlayers.map((player) => (
               <div 
-                key={`${player.id}-${idx}`} 
+                key={player.id} 
                 className={`flex items-center gap-1.5 truncate px-2 rounded hover:bg-ivory/5 transition-colors ${textSizeClass}`}
                 title={player.name}
               >

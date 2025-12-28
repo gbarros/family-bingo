@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import ChristmasBackground from '@/components/shared/ChristmasBackground';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import PlayerJoin from '@/components/player/PlayerJoin';
@@ -10,7 +12,73 @@ import { useGameClient } from '@/lib/core/useGameClient';
 
 function PlayerContent() {
   const game = useGameClient();
+  const searchParams = useSearchParams();
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // P2P Validation State
+  const isP2P = process.env.NEXT_PUBLIC_GAME_MODE === 'p2p';
+  const hostId = searchParams.get('host');
+  const [isHashChecked, setIsHashChecked] = useState(false);
+  const [hasSecret, setHasSecret] = useState(false);
+  const [dismissedWinner, setDismissedWinner] = useState<string | null>(null);
+
+  // Reset dismissed state if winner disappears (new game) or changes
+  useEffect(() => {
+    if (!game.winner) {
+      setDismissedWinner(null);
+    }
+  }, [game.winner]);
+
+  useEffect(() => {
+    if (isP2P) {
+      // Check both query param (searchParams handles host) and hash (for secret)
+      // We do this in effect to ensure client-side access to window
+      const checkParams = () => {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const secret = hashParams.get('s');
+        setHasSecret(!!secret);
+        setIsHashChecked(true);
+      };
+
+      checkParams();
+      window.addEventListener('hashchange', checkParams);
+      return () => window.removeEventListener('hashchange', checkParams);
+    } else {
+      setIsHashChecked(true);
+      setHasSecret(true);
+    }
+  }, [isP2P, searchParams]);
+
+  // Show loading while we verify P2P params on client
+  if (isP2P && hostId && !isHashChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (isP2P && (!hostId || (isHashChecked && !hasSecret))) {
+    return (
+      <>
+        <ChristmasBackground />
+        <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
+          <div className="max-w-md w-full bg-ivory/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl text-center border border-cocoa/10 animate-in zoom-in-95 duration-500">
+            <div className="w-20 h-20 bg-cocoa/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-4xl">🔍</span>
+            </div>
+            <h2 className="text-2xl font-bold text-cocoa mb-4">Link Incompleto</h2>
+            <p className="text-cocoa/70 mb-8 leading-relaxed">
+              Para entrar em uma partida P2P, você precisa utilizar o link específico compartilhado pelo anfitrião ou escanear o QR Code.
+            </p>
+            <Link href="/" className="block w-full py-4 rounded-xl font-bold text-lg bg-cocoa text-ivory hover:bg-cocoa-light transition-colors shadow-lg">
+              Voltar ao Início
+            </Link>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   // If we haven't identified who we are, show the join screen
   if (!game.clientId || !game.playerId) {
@@ -20,7 +88,8 @@ function PlayerContent() {
         <PlayerJoin
           onJoin={game.join}
           onClaim={game.claim}
-          loading={game.isBusy || (!game.isConnected && !!game.playerName)}
+          loading={!game.error && (game.isBusy || (!game.isConnected && !!game.playerName))}
+          error={game.error}
           sessionStatus={game.gameStatus}
           canJoin={true}
           pendingJoin={false}
@@ -81,6 +150,49 @@ function PlayerContent() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Winner Notification Overlay */}
+        {game.winner && dismissedWinner !== (game.winner.name + game.winner.pattern) && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+             <div className="absolute inset-0 bg-cocoa-dark/60 backdrop-blur-sm animate-in fade-in duration-300" 
+                  onClick={() => setDismissedWinner(game.winner!.name + game.winner!.pattern)} />
+             <div className="relative w-full max-w-sm card-elevated-lg bg-ivory-warm rounded-2xl p-8 animate-in zoom-in-95 duration-500 shadow-2xl text-center overflow-hidden">
+                {/* Close X */}
+                <button 
+                  onClick={() => setDismissedWinner(game.winner!.name + game.winner!.pattern)}
+                  className="absolute top-4 right-4 text-cocoa-light/50 hover:text-cocoa transition-colors p-2"
+                >
+                  ✕
+                </button>
+
+                {/* Winner Animation */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gold/20 via-transparent to-gold/10 animate-pulse pointer-events-none" />
+                
+                <div className="text-6xl mb-4 animate-bounce">🏆</div>
+                <h2 className="text-3xl font-display font-bold text-gold-solid mb-2 leading-tight">
+                  BINGO!
+                </h2>
+                <div className="py-4">
+                  <p className="text-lg text-cocoa-light font-sans mb-1">Vencedor</p>
+                  <p className="text-2xl font-bold text-cocoa mb-3">{game.winner.name}</p>
+                  <div className="inline-block px-4 py-1 rounded-full bg-gold/20 border border-gold/40 text-cocoa-dark font-medium text-sm">
+                    {game.winner.pattern}
+                  </div>
+                </div>
+                
+                <p className="text-sm text-cocoa-light/60 mt-4 mb-6 italic">
+                  O jogo continua... Boa sorte!
+                </p>
+
+                <button
+                  onClick={() => setDismissedWinner(game.winner!.name + game.winner!.pattern)}
+                  className="w-full btn btn-primary py-3 rounded-xl font-bold text-lg shadow-lg"
+                >
+                  Continuar Jogando
+                </button>
+             </div>
           </div>
         )}
 
