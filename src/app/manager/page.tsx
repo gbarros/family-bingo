@@ -7,6 +7,7 @@ import PlayerList from '@/components/manager/PlayerList';
 import DrawnHistory from '@/components/manager/DrawnHistory';
 import RecentNumbers from '@/components/manager/RecentNumbers';
 import PlayerStatusPanel from '@/components/manager/PlayerStatusPanel';
+import ViewOverlay from '@/components/manager/ViewOverlay';
 import CurrentNumber from '@/components/player/CurrentNumber';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import { useSSE } from '@/lib/hooks/useSSE';
@@ -16,6 +17,7 @@ export default function ManagerPage() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [activeView, setActiveView] = useState<'none' | 'number-focus' | 'history' | 'players'>('none');
   const [adminBusy, setAdminBusy] = useState(false);
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [sessionStatus, setSessionStatus] = useState<GameStatus | null>(null);
@@ -225,9 +227,8 @@ export default function ManagerPage() {
 
         if (data.isValid) {
           alert(
-            `✅ BINGO VÁLIDO!\n\nJogador: ${playerName}\nPadrão: ${data.winningPattern}\n\n🎉 ${playerName} venceu!`
+            `✅ BINGO VÁLIDO!\n\nJogador: ${playerName}\nPadrão: ${data.winningPattern}\n\n🎉 ${playerName} bingoou!`
           );
-          setSessionStatus('finished');
         } else {
           alert(`❌ BINGO INVÁLIDO\n\n${playerName} ainda não completou o padrão.`);
         }
@@ -324,7 +325,7 @@ export default function ManagerPage() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-cocoa p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-cocoa p-4 md:p-6 flex flex-col">
       {/* Settings gear */}
       <div className="fixed top-4 right-4 z-20">
         <button
@@ -398,9 +399,49 @@ export default function ManagerPage() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto space-y-6">
+      {/* View Overlays */}
+      <ViewOverlay
+        title="Status dos Jogadores"
+        isOpen={activeView === 'players'}
+        onClose={() => setActiveView('none')}
+        minimal={true}
+      >
+        <PlayerList players={players} onValidate={handleValidate} />
+      </ViewOverlay>
+
+      <ViewOverlay
+        title="Histórico de Números"
+        isOpen={activeView === 'history'}
+        onClose={() => setActiveView('none')}
+        minimal={true}
+      >
+        <DrawnHistory numbers={drawnNumbers} />
+      </ViewOverlay>
+
+      <ViewOverlay
+        title="Foco no Número"
+        isOpen={activeView === 'number-focus'}
+        onClose={() => setActiveView('none')}
+        minimal={true}
+      >
+        <div className="flex flex-col items-center justify-center min-h-[70vh] p-12">
+          {currentNumber ? (
+            <div className="transform scale-[1.5] sm:scale-[2] md:scale-[2.5] origin-center transition-all duration-500">
+              <CurrentNumber 
+                number={currentNumber} 
+                onAction={handleDrawNumber}
+                disabled={drawing}
+              />
+            </div>
+          ) : (
+            <p className="text-ivory/30 text-2xl">Nenhum número sorteado</p>
+          )}
+        </div>
+      </ViewOverlay>
+
+      <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col min-h-0 space-y-6">
         {/* Header */}
-        <div className="text-center fade-in-up">
+        <div className="text-center fade-in-up shrink-0">
           <h1 className="text-4xl md:text-5xl font-display font-bold text-gold-light mb-2">
             Painel do Coordenador
           </h1>
@@ -412,18 +453,21 @@ export default function ManagerPage() {
           )}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
           {/* Main Column */}
-          <div className="w-full lg:w-3/4 space-y-6">
+          <div className="w-full lg:w-3/4 flex flex-col gap-6 min-h-0">
             {/* Current number (if active) */}
             {sessionStatus === 'active' && currentNumber && (
-              <div className="fade-in-up stagger-1">
-                <CurrentNumber number={currentNumber} />
+              <div className="fade-in-up stagger-1 shrink-0">
+                <CurrentNumber 
+                  number={currentNumber} 
+                  onExpand={() => setActiveView('number-focus')}
+                />
               </div>
             )}
 
             {/* Game controls & Stats */}
-            <div className="flex flex-col lg:flex-row gap-6 fade-in-up stagger-2">
+            <div className="flex-1 flex flex-col lg:flex-row gap-6 fade-in-up stagger-2 min-h-0">
               {/* Left col: Controls */}
               <div className="w-full lg:w-1/2">
                 <GameControls
@@ -444,7 +488,10 @@ export default function ManagerPage() {
               
               <div className="w-full lg:w-1/2 lg:relative">
                  <div className="lg:absolute lg:inset-0 h-full">
-                    <PlayerStatusPanel players={players} />
+                    <PlayerStatusPanel 
+                      players={players} 
+                      onExpand={() => setActiveView('players')}
+                    />
                  </div>
               </div>
             </div>
@@ -453,24 +500,14 @@ export default function ManagerPage() {
           {/* Sidebar Column: Recent History */}
           <div className="w-full lg:w-1/4 fade-in-up stagger-2 lg:relative">
              <div className="lg:absolute lg:inset-0 h-full">
-               <RecentNumbers numbers={drawnNumbers} />
+               <RecentNumbers 
+                 numbers={drawnNumbers} 
+                 onExpand={() => setActiveView('history')}
+               />
              </div>
           </div>
         </div>
 
-        {/* Players */}
-        {sessionId && (
-          <div className="fade-in-up stagger-3">
-            <PlayerList players={players} onValidate={handleValidate} />
-          </div>
-        )}
-
-        {/* Drawn history */}
-        {drawnNumbers.length > 0 && (
-          <div className="fade-in-up stagger-4">
-            <DrawnHistory numbers={drawnNumbers} />
-          </div>
-        )}
       </div>
     </div>
   );

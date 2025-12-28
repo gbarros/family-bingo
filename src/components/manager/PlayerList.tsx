@@ -28,50 +28,49 @@ export default function PlayerList({ players, onValidate }: PlayerListProps) {
   }
 
   return (
-    <div className="card-elevated-lg bg-cocoa-light rounded-xl p-6">
-      <h2 className="text-2xl font-display font-bold text-gold-light mb-4">
+    <div className="card-elevated-lg bg-cocoa-light rounded-xl p-8 md:p-12 w-full">
+      <h2 className="text-3xl font-display font-bold text-gold-light mb-8 text-center uppercase tracking-widest border-b border-ivory/10 pb-6">
         Jogadores Conectados ({players.length})
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xxl:grid-cols-5 gap-6">
         {players.map((player) => (
           <button
             key={player.id}
             onClick={() => handleValidateClick(player.id, player.name)}
             disabled={validating === player.id}
-            className={`card-elevated bg-cocoa rounded-lg p-4 text-left transition-all hover:ring-2 hover:ring-gold/25 active:brightness-95 group relative ${
-              !player.connected ? 'opacity-60 grayscale' : 'hover:bg-cocoa-dark'
+            className={`card-elevated-lg bg-cocoa rounded-xl p-6 text-left transition-all hover:ring-2 hover:ring-gold/50 active:brightness-95 group relative ${
+              !player.connected ? 'opacity-50 grayscale' : 'hover:bg-cocoa-dark shadow-xl'
             }`}
-            title={`ID: ${player.id}\nDispositivo: ${player.user_agent || 'Desconhecido'}${player.deviceCount && player.deviceCount > 1 ? `\nConexões: ${player.deviceCount} (múltiplas abas/aparelhos)` : ''}`}
+            title={`ID: ${player.id}\nDispositivo: ${player.user_agent || 'Desconhecido'}${player.deviceCount && player.deviceCount > 1 ? `\nConexões: ${player.deviceCount}` : ''}`}
           >
             {/* Connection status indicator */}
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-start gap-4 mb-4">
               <div
-                className={`w-3 h-3 rounded-full ${
+                className={`w-4 h-4 rounded-full mt-1.5 shrink-0 ${
                   player.connected
-                    ? 'bg-forest-light animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]'
-                    : 'bg-gray-500'
+                    ? 'bg-forest-light animate-pulse shadow-[0_0_12px_rgba(74,222,128,0.6)]'
+                    : 'bg-gray-600'
                 }`}
               ></div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-display font-semibold text-ivory group-hover:text-gold-light transition-colors truncate block">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl font-display font-bold text-ivory group-hover:text-gold-light transition-colors truncate block">
                     {player.name}
                   </span>
                   {player.deviceCount && player.deviceCount > 1 && (
-                    <span className="px-1.5 py-0.5 rounded-full bg-gold text-cocoa text-[10px] font-bold shadow-sm" title={`${player.deviceCount} dispositivos conectados`}>
-                      {player.deviceCount}
+                    <span className="px-2 py-0.5 rounded-full bg-gold text-cocoa text-xs font-bold shadow-sm">
+                      {player.deviceCount} Telas
                     </span>
                   )}
                 </div>
                 {!player.connected && (
-                  <span className="text-xs text-ivory/50 font-sans block -mt-1">
-                    (Offline)
+                  <span className="text-sm text-crimson font-sans font-bold block mb-1">
+                    (OFFLINE)
                   </span>
                 )}
                 {player.user_agent && (
-                   <span className="text-[10px] text-ivory/30 font-mono truncate block max-w-full">
-                     {/* Simplified UA: extract OS/Browser roughly if possible, else full string in tooltip */}
+                   <span className="text-xs text-ivory/40 font-mono truncate block max-w-full italic">
                      {player.user_agent.includes('iPhone') ? '📱 iPhone' :
                       player.user_agent.includes('Android') ? '📱 Android' :
                       player.user_agent.includes('Macintosh') ? '💻 Mac' :
@@ -81,24 +80,30 @@ export default function PlayerList({ players, onValidate }: PlayerListProps) {
               </div>
             </div>
 
-            {/* Card preview (first 5 numbers) */}
-            <div className="flex gap-1 flex-wrap">
-              {player.card.slice(0, 5).map((num, i) => (
-                <span
-                  key={i}
-                  className="text-xs font-mono bg-ivory/20 text-ivory px-1.5 py-0.5 rounded font-bold"
-                >
-                  {num}
-                </span>
-              ))}
-              <span className="text-xs text-ivory/70">...</span>
+            {/* Card preview (more numbers now) */}
+            <div className="bg-cocoa-dark/50 rounded-lg p-3">
+              <p className="text-[10px] text-ivory/30 uppercase tracking-widest mb-1.5 font-bold">Início da Cartela</p>
+              <div className="flex gap-1.5 flex-wrap">
+                {player.card.slice(0, 10).map((num, i) => (
+                  <span
+                    key={i}
+                    className="text-sm font-mono bg-ivory/10 text-ivory/90 px-2 py-0.5 rounded font-bold border border-ivory/5"
+                  >
+                    {num}
+                  </span>
+                ))}
+                <span className="text-sm text-ivory/30 self-end mb-0.5">...</span>
+              </div>
             </div>
 
-            {/* Validation hint */}
-            <div className="mt-2 text-xs text-gold-light group-hover:text-gold-light font-semibold">
-              {validating === player.id
-                ? '⏳ Validando...'
-                : '👆 Clique para validar BINGO'}
+            {/* Validation action */}
+            <div className="mt-4 pt-4 border-t border-ivory/5 flex items-center justify-between">
+              <span className="text-xs text-gold-light font-bold uppercase tracking-wider group-hover:text-gold">
+                {validating === player.id ? 'Processando...' : 'Validar BINGO'}
+              </span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-gold">
+                👆
+              </span>
             </div>
           </button>
         ))}

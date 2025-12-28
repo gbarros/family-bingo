@@ -282,12 +282,17 @@ export default function PlayerPage() {
 
       case 'gameEnded':
         setGameStatus('finished');
-        // Show winner notification
-        if (latestEvent.data.playerName !== playerName) {
-          alert(`🎉 ${latestEvent.data.winner} ganhou! BINGO!`);
-        }
         // Resync to reflect end-of-game state.
         fetchGameState();
+        break;
+
+      case 'bingo':
+        // Someone won a prize, but the game continues!
+        if (latestEvent.data.playerName !== playerName) {
+           alert(`🎉 ${latestEvent.data.winner} fez BINGO (${latestEvent.data.pattern})!\nO jogo continua...`);
+        } else {
+           alert(`🎊 PARABÉNS! Seu BINGO foi validado!\nO jogo continua para os próximos prêmios...`);
+        }
         break;
     }
   }, [events, playerName, pendingName, handleJoin, fetchGameState]);

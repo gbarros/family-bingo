@@ -55,16 +55,18 @@ export async function POST(request: NextRequest) {
     const isValid = validateBingo(card, markings, session.game_mode);
 
     if (isValid) {
-      // Update session as finished with winner
-      updateSessionStatus(session.id, 'finished', playerId);
-
       // Get winning pattern description
       const winningPattern = getWinningPattern(card, markings, session.game_mode);
 
-      // Broadcast game ended
+      // Broadcast bingo found but DON'T finish session
+      // This allows for multiple winners and continuing the game for secondary prizes.
       broadcast({
-        type: 'gameEnded',
-        data: { winner: player.name, playerName: player.name },
+        type: 'bingo',
+        data: {
+          winner: player.name,
+          playerName: player.name,
+          pattern: winningPattern || 'BINGO'
+        },
       });
 
       return NextResponse.json<ValidateBingoResponse>({

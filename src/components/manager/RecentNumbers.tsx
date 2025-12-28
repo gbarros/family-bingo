@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 
 interface RecentNumbersProps {
   numbers: number[]; // All drawn numbers in order [1st, 2nd, ..., current]
+  onExpand?: () => void;
 }
 
-export default function RecentNumbers({ numbers }: RecentNumbersProps) {
+export default function RecentNumbers({ numbers, onExpand }: RecentNumbersProps) {
   // We want to show the history of recent numbers, excluding the very current one (which is huge on the screen),
   // or maybe effectively just the reverse list.
   // "pile list that goes erasing the older number when full... rolling them down"
@@ -27,7 +28,7 @@ export default function RecentNumbers({ numbers }: RecentNumbersProps) {
   // For now, standard React list with key-based animation if possible, or just standard render.
   
   const history = numbers.slice(0, -1).reverse(); // Exclude current, reverse
-  const maxItems = 12; // Increase to fill the vertical space (fade out handles the bottom)
+  const maxItems = 20; // Increased to ensure it fills taller screens
   const visible = history.slice(0, maxItems);
 
   if (visible.length === 0) {
@@ -40,9 +41,20 @@ export default function RecentNumbers({ numbers }: RecentNumbersProps) {
 
   return (
     <div className="h-full card-elevated-lg bg-cocoa-light rounded-xl p-4 overflow-hidden flex flex-col relative">
-      <h3 className="text-lg font-display font-bold text-gold-light mb-3 text-center uppercase tracking-wider">
-        Últimos
-      </h3>
+      <div className="flex items-center justify-between mb-3 shrink-0">
+        <h3 className="text-lg font-display font-bold text-gold-light uppercase tracking-wider">
+          Últimos
+        </h3>
+        {onExpand && (
+          <button 
+            onClick={onExpand}
+            className="text-xs font-sans font-bold text-ivory/40 hover:text-gold-light transition-colors"
+            title="Ver Histórico Completo"
+          >
+            VER ↗
+          </button>
+        )}
+      </div>
       
       <div className="flex-1 relative overflow-hidden">
         {/* Gradient mask for fading out at bottom */}

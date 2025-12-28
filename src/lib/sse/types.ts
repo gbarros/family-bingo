@@ -15,6 +15,7 @@ export type SSEEvent =
     };
   }
   | { type: 'gameEnded'; data: { winner: string; playerName: string } }
+  | { type: 'bingo'; data: { winner: string; playerName: string; pattern: string } }
   | { type: 'heartbeat'; data: { timestamp: number } }
   | { type: 'playerPresence'; data: { clientId: string; online: boolean; deviceCount: number } };
 

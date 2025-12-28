@@ -4,9 +4,10 @@ import type { PlayerWithCard } from '@/types/game';
 
 interface PlayerStatusPanelProps {
   players: PlayerWithCard[];
+  onExpand?: () => void;
 }
 
-export default function PlayerStatusPanel({ players }: PlayerStatusPanelProps) {
+export default function PlayerStatusPanel({ players, onExpand }: PlayerStatusPanelProps) {
   // Logic: Fill column 1 (up to 10), then column 2, then column 3.
   // We use grid-flow-col with specific row count to force this behavior.
   
@@ -31,9 +32,19 @@ export default function PlayerStatusPanel({ players }: PlayerStatusPanelProps) {
 
   return (
     <div className="h-full card-elevated-lg bg-cocoa-light rounded-xl p-4 flex flex-col overflow-hidden border border-ivory/5">
-      <h3 className="text-lg font-display font-bold text-gold-light mb-2 flex items-center gap-2 shrink-0">
-        <span>👥</span> Jogadores ({players.length})
-      </h3>
+      <div className="flex items-center justify-between mb-2 shrink-0">
+        <h3 className="text-lg font-display font-bold text-gold-light flex items-center gap-2">
+          <span>👥</span> Jogadores ({players.length})
+        </h3>
+        {onExpand && (
+          <button 
+            onClick={onExpand}
+            className="text-xs font-sans font-bold text-ivory/40 hover:text-gold-light transition-colors flex items-center gap-1"
+          >
+            GERENCIAR ↗
+          </button>
+        )}
+      </div>
       
       <div className="flex-1 min-h-0 overflow-hidden">
         {players.length === 0 ? (
