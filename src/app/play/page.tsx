@@ -3,7 +3,7 @@
 import { useState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import ChristmasBackground from '@/components/shared/ChristmasBackground';
+import NewYearBackground from '@/components/shared/NewYearBackground';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import PlayerJoin from '@/components/player/PlayerJoin';
 import BingoCard from '@/components/player/BingoCard';
@@ -61,7 +61,7 @@ function PlayerContent() {
   if (isP2P && (!hostId || (isHashChecked && !hasSecret))) {
     return (
       <>
-        <ChristmasBackground />
+        <NewYearBackground />
         <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
           <div className="max-w-md w-full bg-ivory/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl text-center border border-cocoa/10 animate-in zoom-in-95 duration-500">
             <div className="w-20 h-20 bg-cocoa/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -84,7 +84,7 @@ function PlayerContent() {
   if (!game.clientId || !game.playerId) {
     return (
       <>
-        <ChristmasBackground />
+        <NewYearBackground />
         <PlayerJoin
           onJoin={game.join}
           onClaim={game.claim}
@@ -103,7 +103,7 @@ function PlayerContent() {
   // Once joined, show the game board
   return (
     <>
-      <ChristmasBackground />
+      <NewYearBackground />
 
       <div className="min-h-screen p-2 md:p-6 relative z-10">
         {/* Settings gear */}
@@ -125,8 +125,8 @@ function PlayerContent() {
               className="absolute inset-0 bg-cocoa-dark/80 backdrop-blur-sm animate-in fade-in duration-300"
               onClick={() => setSettingsOpen(false)}
             />
-            <div className="relative w-full max-w-md card-elevated-lg bg-ivory-warm rounded-2xl p-8 animate-in zoom-in-95 duration-300 shadow-2xl overflow-hidden">
-               <div className="absolute top-0 right-0 p-4 opacity-5 text-8xl pointer-events-none select-none">🎄</div>
+            <div className="relative w-full max-w-md card-elevated-lg bg-ivory-warm/95 rounded-2xl p-8 animate-in zoom-in-95 duration-300 shadow-2xl overflow-hidden sheen">
+               <div className="absolute top-0 right-0 p-4 opacity-5 text-6xl pointer-events-none select-none">2026</div>
                
               <h2 className="text-3xl font-display font-bold text-cocoa mb-4">
                 Configurações
@@ -158,7 +158,7 @@ function PlayerContent() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
              <div className="absolute inset-0 bg-cocoa-dark/60 backdrop-blur-sm animate-in fade-in duration-300" 
                   onClick={() => setDismissedWinner(game.winner!.name + game.winner!.pattern)} />
-             <div className="relative w-full max-w-sm card-elevated-lg bg-ivory-warm rounded-2xl p-8 animate-in zoom-in-95 duration-500 shadow-2xl text-center overflow-hidden">
+             <div className="relative w-full max-w-sm card-elevated-lg bg-ivory-warm/95 rounded-2xl p-8 animate-in zoom-in-95 duration-500 shadow-2xl text-center overflow-hidden sheen">
                 {/* Close X */}
                 <button 
                   onClick={() => setDismissedWinner(game.winner!.name + game.winner!.pattern)}
@@ -199,8 +199,8 @@ function PlayerContent() {
         <div className="max-w-6xl mx-auto space-y-2 md:space-y-6 py-1 md:py-8">
           {/* Header - compact on mobile */}
           <div className="text-center space-y-0.5 md:space-y-2 animate-in fade-in slide-in-from-top-4 duration-700">
-            <h1 className="text-3xl md:text-7xl font-display font-bold text-gradient-gold drop-shadow-sm">
-              Bingo de Natal
+            <h1 className="text-3xl md:text-7xl font-display font-bold text-shimmer drop-shadow-sm">
+              Bingo de Réveillon
             </h1>
             <p className="text-base md:text-2xl font-light text-ivory/90 tracking-wide">
               Boa sorte, <span className="font-bold text-gold-light underline decoration-gold-light/30 underline-offset-4">{game.playerName}</span>! ✨

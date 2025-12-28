@@ -11,6 +11,7 @@ import PlayerStatusPanel from '@/components/manager/PlayerStatusPanel';
 import ViewOverlay from '@/components/manager/ViewOverlay';
 import CurrentNumber from '@/components/player/CurrentNumber';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
+import NewYearBackground from '@/components/shared/NewYearBackground';
 import { useGameHost } from '@/lib/core/useGameHost';
 
 function ManagerContent() {
@@ -18,6 +19,7 @@ function ManagerContent() {
   const [token, setToken] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeView, setActiveView] = useState<'none' | 'number-focus' | 'history' | 'players' | 'qr'>('none');
+  const isOverlayOpen = settingsOpen || activeView !== 'none';
 
   // Check for existing token (Only relevant for Server Mode)
   useEffect(() => {
@@ -41,7 +43,9 @@ function ManagerContent() {
     : '';
 
   return (
-    <div className="h-screen bg-gradient-cocoa p-2 sm:p-4 md:p-6 flex flex-col overflow-hidden">
+    <>
+      <NewYearBackground paused={isOverlayOpen} />
+      <div className="h-screen p-2 sm:p-4 md:p-6 flex flex-col overflow-hidden relative z-10">
       {/* settings and header ... */}
       <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-20 flex gap-1 sm:gap-2">
         <button
@@ -64,7 +68,7 @@ function ManagerContent() {
         isOpen={activeView === 'qr'}
         onClose={() => setActiveView('none')}
       >
-        <div className="flex flex-col items-center justify-center p-4 sm:p-8 bg-ivory-warm rounded-2xl sm:rounded-3xl shadow-xl max-w-sm mx-auto mt-4 sm:mt-8">
+        <div className="flex flex-col items-center justify-center p-4 sm:p-8 bg-ivory-warm/95 rounded-2xl sm:rounded-3xl shadow-xl max-w-sm mx-auto mt-4 sm:mt-8 sheen">
           <p className="text-cocoa font-display font-semibold mb-4 sm:mb-8 text-center text-base sm:text-xl">
             Aponte a câmera para participar:
           </p>
@@ -87,7 +91,7 @@ function ManagerContent() {
       <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col min-h-0">
         {/* Header - compact on mobile */}
         <div className="text-center fade-in-up py-1 sm:py-4">
-          <h1 className="text-2xl sm:text-4xl md:text-6xl font-display font-bold text-gold-light mb-1 drop-shadow-sm">
+          <h1 className="text-2xl sm:text-4xl md:text-6xl font-display font-bold text-shimmer mb-1 drop-shadow-sm">
             Painel do Coordenador
           </h1>
           <div className="flex items-center justify-center gap-2">
@@ -173,7 +177,7 @@ function ManagerContent() {
       {settingsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-cocoa-dark/70 backdrop-blur-sm" onClick={() => setSettingsOpen(false)} />
-          <div className="relative w-full max-w-xl card-elevated-lg bg-ivory-warm rounded-2xl p-8 shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="relative w-full max-w-xl card-elevated-lg bg-ivory-warm/95 rounded-2xl p-8 shadow-2xl animate-in zoom-in-95 duration-300 sheen">
             <h2 className="text-3xl font-display font-bold text-cocoa mb-6">
               Coordenador
             </h2>
@@ -249,6 +253,7 @@ function ManagerContent() {
         </div>
       </ViewOverlay>
     </div>
+    </>
   );
 }
 

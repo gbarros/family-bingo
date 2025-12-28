@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Bingo de Natal 2025",
-  description: "Jogo de bingo para família no Natal",
+  title: "Bingo de Réveillon 2026",
+  description: "Jogo de bingo para família no Réveillon",
 };
 
 export default function RootLayout({

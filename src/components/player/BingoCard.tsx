@@ -46,13 +46,13 @@ export default function BingoCard({
   return (
     <div className="w-full max-w-lg mx-auto">
       {/* Card container with elevated style */}
-      <div className="card-elevated-lg bg-ivory rounded-xl sm:rounded-2xl p-2 sm:p-4 md:p-6">
+      <div className="card-elevated-lg bg-ivory/95 rounded-xl sm:rounded-2xl p-2 sm:p-4 md:p-6 sheen">
         {/* Header with column letters - ensure visibility */}
         <div className="grid grid-cols-5 gap-1 md:gap-2 mb-1 sm:mb-2">
           {COLUMN_LETTERS.map((letter) => (
             <div
               key={letter}
-              className="text-center text-2xl sm:text-2xl md:text-3xl font-display font-bold text-crimson drop-shadow-sm"
+              className="text-center text-2xl sm:text-2xl md:text-3xl font-display font-bold text-gold-dark drop-shadow-sm"
             >
               {letter}
             </div>
@@ -83,10 +83,10 @@ export default function BingoCard({
                     focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-gold/40
                     ${
                       isFree
-                        ? 'bg-gold text-cocoa shine cursor-default'
+                        ? 'bg-gradient-to-br from-gold-light via-gold to-gold-dark text-cocoa shine cursor-default border-2 border-gold-dark/70 shadow-lg'
                         : isMarked
-                        ? 'bg-gold text-cocoa border-2 border-gold-dark shadow-lg'
-                        : 'bg-ivory-warm text-cocoa border-2 border-forest-light hover:border-gold hover:ring-2 hover:ring-gold/25 active:brightness-95'
+                        ? 'bg-gradient-to-br from-gold-light to-gold text-cocoa border-2 border-gold-dark shadow-lg ring-2 ring-gold-light/30'
+                        : 'bg-ivory/90 text-cocoa border-2 border-forest-light/60 shadow-sm hover:border-gold hover:bg-ivory hover:ring-2 hover:ring-gold/25 active:brightness-95'
                     }
                     ${isAnimating ? 'mark-bounce' : ''}
                     ${!isFree && 'cursor-pointer'}
@@ -105,7 +105,7 @@ export default function BingoCard({
                       isFree ? 'font-sans font-extrabold text-[0.70rem] sm:text-sm md:text-base tracking-[0.18em]' : ''
                     }`}
                   >
-                    {isFree ? 'FREE' : number}
+                    {isFree ? '2026' : number}
                   </span>
 
                 </button>

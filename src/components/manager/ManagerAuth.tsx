@@ -43,7 +43,7 @@ export default function ManagerAuth({ onAuth }: ManagerAuthProps) {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8 fade-in-up">
-          <h1 className="text-5xl font-display font-bold text-gradient-gold mb-2">
+          <h1 className="text-5xl font-display font-bold text-shimmer mb-2">
             Coordenador
           </h1>
           <p className="text-xl text-ivory font-sans">
@@ -51,7 +51,7 @@ export default function ManagerAuth({ onAuth }: ManagerAuthProps) {
           </p>
         </div>
 
-        <div className="card-elevated-lg bg-cocoa-light rounded-2xl p-8 fade-in-up stagger-1">
+        <div className="card-elevated-lg bg-cocoa-light/90 rounded-2xl p-8 fade-in-up stagger-1 sheen">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label

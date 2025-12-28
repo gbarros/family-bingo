@@ -62,7 +62,7 @@ export default function RecentNumbers({ numbers, onExpand }: RecentNumbersProps)
           {visible.map((num, i) => (
             <div 
               key={`${num}-${i}`}
-              className="shrink-0 w-12 h-12 rounded-full bg-ivory text-cocoa font-display font-bold text-xl flex items-center justify-center shadow-lg"
+              className="shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-ivory via-gold-light/80 to-gold text-cocoa font-display font-bold text-xl flex items-center justify-center shadow-lg shadow-[0_0_18px_rgba(253,230,138,0.45)] ring-1 ring-gold/40 sheen"
             >
               {num}
             </div>
@@ -82,7 +82,7 @@ export default function RecentNumbers({ numbers, onExpand }: RecentNumbersProps)
               className="flex items-center justify-center animate-in slide-in-from-top-4 fade-in duration-500 fill-mode-backwards"
               style={{ animationDelay: `${i * 100}ms` }}
             >
-               <div className="w-16 h-16 rounded-full bg-ivory text-cocoa font-display font-bold text-3xl flex items-center justify-center shadow-lg transform transition-transform hover:scale-105">
+               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-ivory via-gold-light/80 to-gold text-cocoa font-display font-bold text-3xl flex items-center justify-center shadow-lg shadow-[0_0_20px_rgba(253,230,138,0.5)] ring-1 ring-gold/40 transform transition-transform hover:scale-105 sheen">
                  {num}
                </div>
             </div>

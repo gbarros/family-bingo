@@ -34,7 +34,7 @@ export default function CurrentNumber({ number, onExpand, onAction, disabled }: 
 
   return (
     <div 
-      className={`card-elevated-lg bg-crimson rounded-xl p-3 sm:p-6 lg:py-10 text-center border-4 border-gold glow-pulse overflow-hidden relative group transition-all ${
+      className={`card-elevated-lg sheen bg-gradient-to-br from-crimson-dark via-crimson to-crimson-light rounded-xl p-3 sm:p-6 lg:py-10 text-center border-2 border-gold/80 glow-pulse overflow-hidden relative group transition-all ${
         onAction && !disabled ? 'cursor-pointer active:scale-95 hover:brightness-110' : ''
       } ${disabled ? 'opacity-80' : ''}`}
       onClick={() => !disabled && onAction?.()}
@@ -58,7 +58,7 @@ export default function CurrentNumber({ number, onExpand, onAction, disabled }: 
       <div key={animationKey} className="number-draw">
         <div className="flex flex-row items-baseline justify-center gap-2 sm:gap-3 my-1 sm:my-2">
           {/* Column letter */}
-          <span className="text-4xl sm:text-6xl font-display font-bold text-gold shine leading-none">
+          <span className="text-4xl sm:text-6xl font-display font-bold text-shimmer leading-none">
             {columnLetter}
           </span>
 

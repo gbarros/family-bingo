@@ -74,14 +74,14 @@ export default function PlayerJoin({
     <div className="min-h-screen flex items-start justify-center px-4 py-16 sm:py-20 relative z-10 overflow-x-hidden">
       <div className="w-full max-w-[44rem]">
         {/* Unified hero card (title + form + footer) */}
-        <div className="card-elevated-lg bg-ivory-warm rounded-3xl overflow-hidden fade-in-up texture-overlay">
+        <div className="card-elevated-lg bg-ivory-warm/95 rounded-3xl overflow-hidden fade-in-up texture-overlay sheen relative">
           {/* Header */}
           <div className="px-8 pt-10 pb-7 sm:px-12 sm:pt-12 sm:pb-8 text-center">
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-display font-bold leading-none mb-2">
-              <span className="text-gradient-gold">Bingo</span>
+              <span className="text-shimmer">Bingo</span>
             </h1>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-semibold text-gold-solid leading-tight">
-              de Natal 2025
+              de Réveillon 2026
             </h2>
           </div>
 
@@ -102,7 +102,7 @@ export default function PlayerJoin({
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Digite seu nome"
                   maxLength={30}
-                  className="w-full px-5 py-4.5 rounded-xl border-2 border-forest-light bg-ivory text-cocoa text-xl font-sans focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all"
+                  className="w-full px-5 py-4.5 rounded-xl border-2 border-forest-light/70 bg-ivory/95 text-cocoa text-xl font-sans shadow-inner focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all"
                   disabled={loading || !canJoin || pendingJoin}
                   autoFocus
                 />
@@ -149,7 +149,7 @@ export default function PlayerJoin({
                 )}
                 {sessionStatus === 'waiting' && (
                   <p className="text-base sm:text-lg text-cocoa-light font-sans">
-                    🎄 Sessão aberta! Entre com seu nome para receber sua cartela.
+                    🥂 Sessão aberta! Entre com seu nome para receber sua cartela.
                   </p>
                 )}
                 {sessionStatus === 'active' && (
@@ -171,7 +171,7 @@ export default function PlayerJoin({
       {conflictData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-cocoa-dark/80 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md card-elevated-lg bg-ivory-warm rounded-2xl p-6 fade-in-up">
+          <div className="relative w-full max-w-md card-elevated-lg bg-ivory-warm rounded-2xl p-6 fade-in-up sheen">
             <h3 className="text-xl font-display font-bold text-cocoa mb-3">
                🤔 Nome já em uso
             </h3>
@@ -217,7 +217,7 @@ export default function PlayerJoin({
 
         {/* Decorative element */}
         <div className="mt-10 text-center text-6xl fade-in-up stagger-4">
-          🎅
+          🎆
         </div>
       </div>
     </div>

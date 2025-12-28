@@ -8,31 +8,31 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Christmas palette - improved contrast for accessibility
-        forest: {
-          DEFAULT: '#0F4C2C',
-          light: '#1A6B3F',
-          dark: '#0A3320',
+        // New Year / Reveillon palette
+        forest: { // Mapped to Midnight Blue (Backgrounds)
+          DEFAULT: '#020617', // slate-950
+          light: '#0f172a',   // slate-900
+          dark: '#000000',    // black
         },
-        crimson: {
-          DEFAULT: '#C62828',
-          light: '#E53935',
-          dark: '#8A171B',
+        crimson: { // Mapped to Silver/Platinum (Accents/Buttons)
+          DEFAULT: '#475569', // slate-600
+          light: '#94a3b8',   // slate-400
+          dark: '#1e293b',    // slate-800
         },
         gold: {
-          DEFAULT: '#FFC107',
-          light: '#FFD54F',
-          dark: '#FFA000',
+          DEFAULT: '#FFD700', // Gold
+          light: '#FDE68A',   // Amber-200
+          dark: '#B45309',    // Amber-700
         },
         ivory: {
           DEFAULT: '#FFFFFF',
-          warm: '#FFF9F0',
-          cold: '#F5F5F5',
+          warm: '#F8FAFC',    // Slate-50 (Cooler white)
+          cold: '#F1F5F9',    // Slate-100
         },
-        cocoa: {
-          DEFAULT: '#2C1810',
-          light: '#4E342E',
-          dark: '#1A0F0A',
+        cocoa: { // Mapped to Obsidian (Text)
+          DEFAULT: '#1E293B', // Slate-800
+          light: '#334155',   // Slate-700
+          dark: '#0F172A',    // Slate-900
         },
       },
       fontFamily: {

@@ -2,6 +2,8 @@
 
 import { ReactNode } from 'react';
 
+import NewYearBackground from '@/components/shared/NewYearBackground';
+
 interface ViewOverlayProps {
   title: string;
   isOpen: boolean;
@@ -14,7 +16,9 @@ export default function ViewOverlay({ title, isOpen, onClose, children, minimal 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-cocoa-dark animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-forest via-forest-dark to-forest texture-overlay animate-in fade-in duration-200">
+      <NewYearBackground />
+      
       {/* Absolute Close Button */}
       <button
         onClick={onClose}
@@ -25,13 +29,13 @@ export default function ViewOverlay({ title, isOpen, onClose, children, minimal 
       </button>
 
       {!minimal && (
-        <div className="px-4 pt-4 sm:px-8 sm:pt-8 md:px-12 md:pt-12 shrink-0">
+        <div className="px-4 pt-4 sm:px-8 sm:pt-8 md:px-12 md:pt-12 shrink-0 relative z-10">
           <h2 className="text-xl sm:text-3xl font-display font-bold text-gold-light uppercase tracking-widest">{title}</h2>
         </div>
       )}
 
       {/* Content */}
-      <div className={`flex-1 overflow-auto ${minimal ? 'p-2 sm:p-4' : 'px-4 pb-4 sm:px-8 sm:pb-8 md:px-12 md:pb-12'}`}>
+      <div className={`flex-1 overflow-auto relative z-10 ${minimal ? 'p-2 sm:p-4' : 'px-4 pb-4 sm:px-8 sm:pb-8 md:px-12 md:pb-12'}`}>
         <div className="max-w-7xl mx-auto min-h-full">
           {children}
         </div>
