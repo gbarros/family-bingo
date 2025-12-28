@@ -6,7 +6,6 @@ import { getActiveSession, getPlayersBySession } from '@/lib/db/queries';
 import type { ReconnectResponse } from '@/types/api';
 import { getPlayerMarkingsArray } from '@/lib/db/queries';
 
-export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
@@ -47,18 +46,20 @@ export async function POST(request: NextRequest) {
         console.log(`[Claim] ${name} reclaiming session from ${userAgent}`);
 
         // Update player connection status and UA to the new device
+        // Update player connection status and UA to the new device
         // This ensures subsequent conflicts show the LATEST device used.
         // We import updatePlayerConnection strictly for this.
         const { updatePlayerConnection } = await import('@/lib/db/queries');
-        updatePlayerConnection(existingPlayer.id, true, userAgent);
+        const playerId = Number(existingPlayer.id);
+        updatePlayerConnection(playerId, true, userAgent);
 
         // Return the existing credentials effectively logging them in
         const card = JSON.parse(existingPlayer.card_data);
-        const markings = getPlayerMarkingsArray(existingPlayer.id);
+        const markings = getPlayerMarkingsArray(playerId);
 
         return NextResponse.json<ReconnectResponse>({
             success: true,
-            playerId: existingPlayer.id,
+            playerId: playerId,
             clientId: existingPlayer.client_id, // Return the MASTER clientId
             name: existingPlayer.name,
             card,

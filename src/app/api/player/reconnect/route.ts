@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPlayerByClientId, updatePlayerConnection, getPlayerMarkingsArray, getActiveSession } from '@/lib/db/queries';
 import type { ReconnectRequest, ReconnectResponse } from '@/types/api';
 
-export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/player/reconnect - Reconnect with client ID from localStorage
@@ -43,17 +42,18 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Update player connection status and UA
-    updatePlayerConnection(player.id, true, userAgent);
+    const playerId = Number(player.id);
+    updatePlayerConnection(playerId, true, userAgent);
 
     // Get player's markings
-    const markings = getPlayerMarkingsArray(player.id);
+    const markings = getPlayerMarkingsArray(playerId);
 
     // Parse card data
     const card = JSON.parse(player.card_data);
 
     return NextResponse.json<ReconnectResponse>({
       success: true,
-      playerId: player.id,
+      playerId: playerId,
       clientId: player.client_id, // Added field
       name: player.name,
       card,

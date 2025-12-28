@@ -4,7 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:p2p": "NEXT_PUBLIC_GAME_MODE=p2p next dev",
+    "dev:server": "NEXT_PUBLIC_GAME_MODE=server next dev",
     "build": "next build",
+    "build:p2p": "NEXT_PUBLIC_GAME_MODE=p2p next build",
+    "build:server": "NEXT_PUBLIC_GAME_MODE=server next build",
     "start": "next start",
     "lint": "next lint"
   },

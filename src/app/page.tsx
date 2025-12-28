@@ -5,6 +5,8 @@ import Link from 'next/link';
 import ChristmasBackground from '@/components/shared/ChristmasBackground';
 
 export default function LandingPage() {
+  const isP2P = process.env.NEXT_PUBLIC_GAME_MODE === 'p2p';
+
   return (
     <div className="min-h-screen relative flex items-center justify-center p-6 overflow-hidden">
       <ChristmasBackground />
@@ -25,6 +27,11 @@ export default function LandingPage() {
             <span className="h-px w-12 bg-gold-light/40" />
             <span className="text-gold-light">✨</span>
             <span className="h-px w-12 bg-gold-light/40" />
+            <div className="absolute top-0 right-0 p-4">
+               <span className="text-xs font-mono text-ivory/20 uppercase tracking-widest">
+                 Mode: {process.env.NEXT_PUBLIC_GAME_MODE || 'server'}
+               </span>
+            </div>
           </div>
         </div>
 
@@ -54,36 +61,54 @@ export default function LandingPage() {
             </div>
           </Link>
 
-          {/* Host Path */}
-          <div className="space-y-4">
+          {/* Host Path - Conditional */}
+          {isP2P ? (
             <Link href="/manager" className="group block">
-              <div className="p-6 rounded-2xl bg-cocoa-light/30 backdrop-blur-xl border border-ivory/10 hover:border-gold-light/40 transition-all duration-500 hover:-translate-y-1 flex items-center gap-4 group overflow-hidden relative">
-                <div className="w-12 h-12 rounded-xl bg-gold-light/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-500">
-                  ☁️
+              <div className="h-full p-8 rounded-3xl bg-cocoa-light/30 backdrop-blur-xl border border-ivory/10 hover:border-gold-light/40 transition-all duration-500 hover:-translate-y-2 flex flex-col justify-between group overflow-hidden relative">
+                <div className="relative z-10 space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-ivory/10 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-500">
+                    ⚡
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-display font-bold text-ivory group-hover:text-gold-light transition-colors flex items-center gap-2">
+                       Host Game
+                    </h2>
+                    <p className="text-ivory/60 leading-relaxed mt-2">
+                      Start a new P2P game instantly. No server setup required.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-display font-bold text-ivory group-hover:text-gold-light transition-colors flex items-center gap-2">
-                    Server Mode <span className="text-[10px] bg-gold/20 text-gold-light px-2 py-0.5 rounded-full font-sans uppercase tracking-tighter">Self-Hosted Only</span>
-                  </h2>
-                  <p className="text-ivory/60 text-sm">Requires Node.js + SQLite backend</p>
-                </div>
-              </div>
-            </Link>
-
-            <Link href="/manager?mode=p2p" className="group block">
-              <div className="p-6 rounded-2xl bg-cocoa-light/30 backdrop-blur-xl border border-ivory/10 hover:border-gold-light/40 transition-all duration-500 hover:-translate-y-1 flex items-center gap-4 group overflow-hidden relative">
-                <div className="w-12 h-12 rounded-xl bg-ivory/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-500">
-                  ⚡
-                </div>
-                <div>
-                  <h2 className="text-xl font-display font-bold text-ivory group-hover:text-gold-light transition-colors flex items-center gap-2">
-                    Serverless Mode <span className="text-[10px] bg-forest-light/20 text-forest-light px-2 py-0.5 rounded-full font-sans uppercase tracking-tighter">Cloud Ready</span>
-                  </h2>
-                  <p className="text-ivory/60 text-sm">No backend required, runs in browser</p>
+                 <div className="mt-8 relative z-10">
+                  <span className="inline-flex items-center text-sm font-bold uppercase tracking-widest text-gold-light group-hover:gap-2 transition-all">
+                    Start Hosting <span className="text-xl">→</span>
+                  </span>
                 </div>
               </div>
             </Link>
-          </div>
+          ) : (
+            <Link href="/manager" className="group block">
+              <div className="h-full p-8 rounded-3xl bg-cocoa-light/30 backdrop-blur-xl border border-ivory/10 hover:border-gold-light/40 transition-all duration-500 hover:-translate-y-2 flex flex-col justify-between group overflow-hidden relative">
+                <div className="relative z-10 space-y-4">
+                  <div className="w-16 h-16 rounded-2xl bg-gold-light/20 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-500">
+                    ☁️
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-display font-bold text-ivory group-hover:text-gold-light transition-colors flex items-center gap-2">
+                      Manage Server
+                    </h2>
+                    <p className="text-ivory/60 leading-relaxed mt-2">
+                      Access the dedicated server dashboard to manage persistent games.
+                    </p>
+                  </div>
+                </div>
+                 <div className="mt-8 relative z-10">
+                  <span className="inline-flex items-center text-sm font-bold uppercase tracking-widest text-gold-light group-hover:gap-2 transition-all">
+                    Access System <span className="text-xl">→</span>
+                  </span>
+                </div>
+              </div>
+            </Link>
+          )}
 
         </div>
 

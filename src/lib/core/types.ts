@@ -9,10 +9,11 @@ export interface GameState {
 }
 
 export interface Player {
-    id: string;
+    id: string;           // Stable ID (derived from name)
+    peerId: string;       // Current WebRTC peer ID (changes on reconnection)
     name: string;
-    cardData: number[]; // 25 numbers
-    markings: boolean[]; // 25 booleans
+    cardData: number[];   // 25 numbers
+    markings: boolean[];  // 25 booleans
     userAgent?: string;
     lastActive?: number;
 }

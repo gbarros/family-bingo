@@ -6,7 +6,6 @@ import { drawRandomNumber } from '@/lib/game/numberDrawer';
 import { broadcast } from '@/lib/sse/manager';
 import type { DrawNumberResponse } from '@/types/api';
 
-export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**

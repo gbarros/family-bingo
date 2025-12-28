@@ -46,7 +46,7 @@ export class LocalStorageStorage implements GameStorage {
         this.data.session = {
             sessionId: id,
             gameMode: mode,
-            status: 'active',
+            status: 'active',  // Note: Host will set to 'waiting' in UI until game starts
             drawnNumbers: [],
             startTime: Date.now()
         };

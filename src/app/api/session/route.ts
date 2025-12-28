@@ -11,7 +11,6 @@ import { broadcast } from '@/lib/sse/manager';
 import type { CreateSessionRequest, GetSessionResponse } from '@/types/api';
 import type { GameMode } from '@/types/game';
 
-export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**

@@ -5,7 +5,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { deletePlayerByClientId, getActiveSession, getPlayersBySession } from '@/lib/db/queries';
 import { broadcast } from '@/lib/sse/manager';
 
-export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {

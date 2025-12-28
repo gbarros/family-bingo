@@ -1,15 +1,15 @@
 import { useHttpGameHost } from "./hooks/useHttpGameHost";
 import { useP2PGameHost } from "./hooks/useP2PGameHost";
-import { useSearchParams } from "next/navigation";
 import { GameHost } from "./hostTypes";
 
 export function useGameHost(): GameHost {
-    const searchParams = useSearchParams();
-    const mode = searchParams.get('mode');
+    const isP2P = process.env.NEXT_PUBLIC_GAME_MODE === 'p2p';
 
-    const isP2P = mode === 'p2p';
-    const httpHost = useHttpGameHost(!isP2P);
-    const p2pHost = useP2PGameHost(isP2P);
+    if (isP2P) {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        return useP2PGameHost(true);
+    }
 
-    return isP2P ? p2pHost : httpHost;
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useHttpGameHost(true);
 }

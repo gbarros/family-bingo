@@ -20,7 +20,93 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
     const peerRef = useRef<Peer | null>(null);
     const connRef = useRef<DataConnection | null>(null);
     const requestedNameRef = useRef<string | null>(null);
-    const connectionAttemptRef = useRef<number>(0);
+
+    // Use a ref to always access the latest handler (fixes stale closure issue)
+    const handleIncomingDataRef = useRef<(data: any) => void>(() => { });
+
+    // Define the handler and keep the ref updated
+    handleIncomingDataRef.current = (data: any) => {
+        if (!data) return;
+
+        console.log('[P2P Client] Processing:', data.type, data);
+
+        switch (data.type) {
+            case 'welcome':
+                requestedNameRef.current = null;
+                setState(prev => ({
+                    ...prev,
+                    playerId: String(data.playerId),
+                    card: data.card,
+                    markings: new Array(25).fill(false).map((_, i) => i === 12),
+                    isBusy: false,
+                    playerName: prev.playerName || localStorage.getItem('bingoLastPlayerName'),
+                    // Sync with current game state from host
+                    drawnNumbers: data.drawnNumbers || [],
+                    currentNumber: data.drawnNumbers?.length > 0
+                        ? data.drawnNumbers[data.drawnNumbers.length - 1]
+                        : null,
+                    gameStatus: data.gameStatus || 'waiting'
+                }));
+                break;
+            case 'numberDrawn':
+                console.log('[P2P Client] Number drawn:', data.number);
+                setState(prev => {
+                    // Prevent duplicates (race condition fix)
+                    if (prev.drawnNumbers.includes(data.number)) {
+                        console.log('[P2P Client] Duplicate number, skipping');
+                        return prev;
+                    }
+                    console.log('[P2P Client] Adding number to list:', data.number);
+                    return {
+                        ...prev,
+                        drawnNumbers: [...prev.drawnNumbers, data.number],
+                        currentNumber: data.number
+                    };
+                });
+                break;
+            case 'gameStateChanged':
+                console.log('[P2P Client] Game state changed:', data.status);
+                setState(prev => ({
+                    ...prev,
+                    gameStatus: data.status || prev.gameStatus,
+                    drawnNumbers: data.drawnNumbers !== undefined ? data.drawnNumbers : prev.drawnNumbers,
+                    currentNumber: data.drawnNumbers && data.drawnNumbers.length > 0
+                        ? data.drawnNumbers[data.drawnNumbers.length - 1]
+                        : (data.drawnNumbers?.length === 0 ? null : prev.currentNumber)
+                }));
+                break;
+            case 'gameEnded':
+                // Game ended - show waiting state, clear numbers but keep card
+                setState(prev => ({
+                    ...prev,
+                    gameStatus: 'waiting',
+                    drawnNumbers: [],
+                    currentNumber: null,
+                    markings: new Array(25).fill(false).map((_, i) => i === 12),
+                    winner: undefined
+                }));
+                break;
+            case 'gameReset':
+                // Card reset only - don't change gameStatus (let gameStateChanged handle that)
+                console.log('[P2P Client] Game reset - new card received');
+                setState(prev => ({
+                    ...prev,
+                    card: data.card || prev.card,
+                    markings: new Array(25).fill(false).map((_, i) => i === 12),
+                    drawnNumbers: [],
+                    currentNumber: null,
+                    winner: undefined
+                    // Note: NOT changing gameStatus - that's controlled by gameStateChanged
+                }));
+                break;
+            case 'bingo':
+                setState(prev => ({ ...prev, winner: { name: data.playerName, pattern: data.pattern } }));
+                break;
+            case 'error':
+                setState(prev => ({ ...prev, error: data.message, isBusy: false }));
+                break;
+        }
+    };
 
     const setupConnection = useCallback((conn: DataConnection) => {
         conn.on('open', () => {
@@ -38,7 +124,8 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
 
         conn.on('data', (data: any) => {
             console.log('[P2P Client] Data received:', data.type);
-            handleIncomingData(data);
+            // Call via ref to always use the latest handler
+            handleIncomingDataRef.current(data);
         });
 
         conn.on('error', (err) => {
@@ -90,83 +177,6 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
         }
     }, [setupConnection]);
 
-    const handleIncomingData = (data: any) => {
-        if (!data) return;
-
-        switch (data.type) {
-            case 'welcome':
-                requestedNameRef.current = null;
-                setState(prev => ({
-                    ...prev,
-                    playerId: String(data.playerId),
-                    card: data.card,
-                    markings: new Array(25).fill(false).map((_, i) => i === 12),
-                    isBusy: false,
-                    playerName: prev.playerName || localStorage.getItem('bingoLastPlayerName'),
-                    // Sync with current game state from host
-                    drawnNumbers: data.drawnNumbers || [],
-                    currentNumber: data.drawnNumbers?.length > 0
-                        ? data.drawnNumbers[data.drawnNumbers.length - 1]
-                        : null,
-                    gameStatus: data.gameStatus || 'waiting'
-                }));
-                break;
-            case 'numberDrawn':
-                setState(prev => {
-                    // Prevent duplicates (race condition fix)
-                    if (prev.drawnNumbers.includes(data.number)) {
-                        return prev;
-                    }
-                    return {
-                        ...prev,
-                        drawnNumbers: [...prev.drawnNumbers, data.number],
-                        currentNumber: data.number
-                    };
-                });
-                break;
-            case 'gameStateChanged':
-                setState(prev => ({
-                    ...prev,
-                    gameStatus: data.status || prev.gameStatus,
-                    drawnNumbers: data.drawnNumbers !== undefined ? data.drawnNumbers : prev.drawnNumbers,
-                    currentNumber: data.drawnNumbers && data.drawnNumbers.length > 0
-                        ? data.drawnNumbers[data.drawnNumbers.length - 1]
-                        : (data.drawnNumbers?.length === 0 ? null : prev.currentNumber)
-                }));
-                break;
-            case 'gameEnded':
-                // Game ended - show waiting state, clear numbers but keep card
-                setState(prev => ({
-                    ...prev,
-                    gameStatus: 'waiting',
-                    drawnNumbers: [],
-                    currentNumber: null,
-                    markings: new Array(25).fill(false).map((_, i) => i === 12),
-                    winner: undefined
-                }));
-                break;
-            case 'gameReset':
-                // Full reset with new card
-                setState(prev => ({
-                    ...prev,
-                    card: data.card || prev.card,
-                    markings: new Array(25).fill(false).map((_, i) => i === 12),
-                    drawnNumbers: [],
-                    currentNumber: null,
-                    gameStatus: 'waiting',
-                    winner: undefined
-                }));
-                break;
-            case 'bingo':
-                setState(prev => ({ ...prev, winner: { name: data.playerName, pattern: data.pattern } }));
-                break;
-            case 'error':
-                setState(prev => ({ ...prev, error: data.message, isBusy: false }));
-                break;
-        }
-
-    };
-
     // Heartbeat
     useEffect(() => {
         if (!state.isConnected) return;
@@ -175,7 +185,7 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
             if (connRef.current && connRef.current.open) {
                 connRef.current.send({ type: 'ping', timestamp: Date.now() });
             }
-        }, 10000); // Heartbeat every 10 seconds for more responsive "online" status
+        }, 10000);
 
         return () => clearInterval(interval);
     }, [state.isConnected]);
@@ -189,10 +199,17 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
                 console.log('[P2P Client] Not connected. Attempting reconnection...');
                 connect(hostId, secret);
             }
-        }, 3000); // Check and retry every 3 seconds
+        }, 3000);
 
         return () => clearInterval(monitor);
     }, [hostId, secret, state.isConnected, connect]);
+
+    // Initial connection
+    useEffect(() => {
+        if (hostId && !connRef.current) {
+            connect(hostId, secret);
+        }
+    }, [hostId, secret, connect]);
 
     const join = async (name: string) => {
         const trimmedName = name.trim();

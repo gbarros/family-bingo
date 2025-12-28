@@ -5,7 +5,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { deletePlayerById, getActiveSession, getPlayersBySession } from '@/lib/db/queries';
 import { broadcast } from '@/lib/sse/manager';
 
-export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 function isManagerAuthorized(request: NextRequest): boolean {

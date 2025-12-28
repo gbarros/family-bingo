@@ -5,7 +5,6 @@ import { updateSessionStatus, updateSessionGameMode } from '@/lib/db/queries';
 import { broadcast } from '@/lib/sse/manager';
 import type { UpdateSessionRequest } from '@/types/api';
 
-export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**

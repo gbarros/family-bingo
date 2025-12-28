@@ -26,7 +26,7 @@ function ManagerContent() {
   }, []);
 
   // P2P mode doesn't need token-based auth for now
-  const isP2P = host.sessionId?.startsWith('bingo-host-');
+  const isP2P = process.env.NEXT_PUBLIC_GAME_MODE === 'p2p';
 
   if (!token && !isP2P) {
     return (

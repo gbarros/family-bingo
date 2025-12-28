@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { togglePlayerMarking } from '@/lib/db/queries';
 import type { MarkNumberRequest, MarkNumberResponse } from '@/types/api';
 
-export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/player/mark - Mark or unmark a number on player's card
@@ -29,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update marking in database
-    togglePlayerMarking(playerId, position, marked);
+    togglePlayerMarking(Number(playerId), position, marked);
 
     return NextResponse.json<MarkNumberResponse>({
       success: true,

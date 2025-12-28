@@ -11,7 +11,6 @@ import { validateBingo, getWinningPattern } from '@/lib/game/validator';
 import { broadcast } from '@/lib/sse/manager';
 import type { ValidateBingoRequest, ValidateBingoResponse } from '@/types/api';
 
-export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**

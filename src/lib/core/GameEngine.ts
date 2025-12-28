@@ -43,27 +43,26 @@ export class GameEngine {
         return newNumber;
     }
 
-    async registerPlayer(name: string, playerId: string, userAgent?: string): Promise<Player> {
+    async registerPlayer(name: string, peerId: string, userAgent?: string): Promise<Player> {
+        // Create a stable ID from the player's name
+        const stableId = `player-${name.toLowerCase().replace(/\s+/g, '-')}`;
+
         const players = await this.storage.getAllPlayers();
-        const existingPlayer = players.find(p => p.name.toLowerCase() === name.toLowerCase());
+        const existingPlayer = players.find(p => p.id === stableId);
 
         if (existingPlayer) {
-            console.log(`[Engine] Reconnecting player ${name} (Previous ID: ${existingPlayer.id}, New ID: ${playerId})`);
+            console.log(`[Engine] Reconnecting player ${name} (Peer ID: ${existingPlayer.peerId} -> ${peerId})`);
 
-            // Update with new ID but keep card and markings
+            // Update peerId but keep everything else (card, markings, stable ID)
             const reconnectedPlayer: Player = {
                 ...existingPlayer,
-                id: playerId,
+                peerId: peerId,
                 lastActive: Date.now(),
                 userAgent: userAgent || existingPlayer.userAgent
             };
 
-            // Add new ID first so they don't disappear from list during transition
+            // Just update in place - no removal needed since ID stays the same
             await this.storage.addPlayer(reconnectedPlayer);
-
-            if (existingPlayer.id !== playerId) {
-                await this.storage.removePlayer(existingPlayer.id);
-            }
 
             this.emit('playerJoined', { id: reconnectedPlayer.id, name: reconnectedPlayer.name });
             return reconnectedPlayer;
@@ -71,7 +70,8 @@ export class GameEngine {
 
         const card = generateCard();
         const player: Player = {
-            id: playerId,
+            id: stableId,
+            peerId: peerId,
             name,
             cardData: card,
             markings: new Array(25).fill(false),

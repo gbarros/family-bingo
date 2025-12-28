@@ -73,7 +73,7 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                 session_id: 1,
                 card_data: JSON.stringify(p.cardData),
                 card: p.cardData,
-                connected: connectionsRef.current.get(p.id)?.open ?? false
+                connected: connectionsRef.current.get(p.peerId)?.open ?? false
             }));
         };
 
@@ -96,8 +96,8 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
 
             setState(prev => {
                 const newPlayerList = players.map((p: any) => {
-                    const conn = connectionsRef.current.get(p.id);
-                    const lastPing = lastPingRef.current.get(p.id) || 0;
+                    const conn = connectionsRef.current.get(p.peerId);
+                    const lastPing = lastPingRef.current.get(p.peerId) || 0;
                     const isSilent = now - lastPing > 25000; // 25 seconds mark as offline
 
                     return {
@@ -257,15 +257,14 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
             // Regenerate cards for all connected players
             const updatedPlayers = await engineRef.current.resetAllPlayers();
 
-            // Broadcast new cards to each player
+            // Send new cards to each player (use gameReset, not welcome, to avoid overwriting status)
             updatedPlayers.forEach(player => {
-                const conn = connectionsRef.current.get(player.id);
+                const conn = connectionsRef.current.get(player.peerId);
                 if (conn && conn.open) {
                     conn.send({
-                        type: 'welcome',
-                        playerId: player.id,
+                        type: 'gameReset',
                         card: player.cardData,
-                        clientId: player.id
+                        playerId: player.id
                     });
                 }
             });
@@ -274,6 +273,9 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
             const players = await storageRef.current?.getAllPlayers() || [];
             setState(prev => ({
                 ...prev,
+                status: 'waiting',
+                drawnNumbers: [],
+                currentNumber: null,
                 players: players.map((p: any) => ({
                     id: p.id,
                     name: p.name,
@@ -281,7 +283,7 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                     session_id: 1,
                     card_data: JSON.stringify(p.cardData),
                     card: p.cardData,
-                    connected: connectionsRef.current.get(p.id)?.open ?? false
+                    connected: connectionsRef.current.get(p.peerId)?.open ?? false
                 } as any))
             }));
         }
@@ -326,7 +328,7 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
 
         // Send each player their new card
         updatedPlayers.forEach(player => {
-            const conn = connectionsRef.current.get(player.id);
+            const conn = connectionsRef.current.get(player.peerId);
             if (conn && conn.open) {
                 conn.send({
                     type: 'gameReset',
@@ -353,7 +355,7 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                 session_id: 1,
                 card_data: JSON.stringify(p.cardData),
                 card: p.cardData,
-                connected: connectionsRef.current.get(p.id)?.open ?? false
+                connected: connectionsRef.current.get(p.peerId)?.open ?? false
             } as any))
         }));
     };

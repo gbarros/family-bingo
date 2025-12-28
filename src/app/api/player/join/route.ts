@@ -7,7 +7,6 @@ import { generateCard } from '@/lib/game/cardGenerator';
 import { broadcast } from '@/lib/sse/manager';
 import type { JoinSessionRequest, JoinSessionResponse } from '@/types/api';
 
-export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 /**
@@ -73,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json<JoinSessionResponse>({
       success: true,
-      playerId: player.id,
+      playerId: Number(player.id),
       clientId: player.client_id,
       card,
       sessionId: session.id,

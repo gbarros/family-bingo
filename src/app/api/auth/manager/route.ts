@@ -5,7 +5,6 @@ import { compareSync } from 'bcrypt';
 import { getManagerPasswordHash } from '@/lib/db/queries';
 import type { ManagerAuthRequest, ManagerAuthResponse } from '@/types/api';
 
-export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/auth/manager - Authenticate manager with password
