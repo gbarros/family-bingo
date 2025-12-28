@@ -4,16 +4,27 @@ import { useEffect, useState } from 'react';
 
 interface PlayerJoinProps {
   onJoin: (name: string) => void;
+  onClaim?: (name: string) => void;
   loading?: boolean;
   canJoin?: boolean;
   sessionStatus?: 'none' | 'waiting' | 'active' | 'finished';
+  pendingJoin?: boolean;
+  conflictData?: {
+    existingDevice: string;
+    alreadyConnected: boolean;
+  } | null;
+  onCancelConflict?: () => void;
 }
 
 export default function PlayerJoin({
   onJoin,
+  onClaim,
   loading = false,
   canJoin = true,
   sessionStatus = 'none',
+  pendingJoin = false,
+  conflictData = null,
+  onCancelConflict,
 }: PlayerJoinProps) {
   const [name, setName] = useState('');
 
@@ -33,6 +44,28 @@ export default function PlayerJoin({
     if (name.trim()) {
       onJoin(name.trim());
     }
+  };
+
+  // Helper to parse UA
+  const getDeviceName = (ua: string) => {
+    if (!ua) return 'Desconhecido';
+    if (ua === 'Unknown Device') return ua;
+    
+    let os = 'Desconhecido';
+    if (ua.includes('iPhone')) os = 'iPhone';
+    else if (ua.includes('iPad')) os = 'iPad';
+    else if (ua.includes('Android')) os = 'Android';
+    else if (ua.includes('Macintosh')) os = 'Mac';
+    else if (ua.includes('Windows')) os = 'PC';
+    else if (ua.includes('Linux')) os = 'Linux';
+
+    let browser = '';
+    if (ua.includes('Chrome/')) browser = 'Chrome';
+    else if (ua.includes('Firefox/')) browser = 'Firefox';
+    else if (ua.includes('Safari/') && !ua.includes('Chrome/')) browser = 'Safari';
+    else if (ua.includes('Edg/')) browser = 'Edge';
+
+    return browser ? `${os} (${browser})` : os;
   };
 
   return (
@@ -68,17 +101,19 @@ export default function PlayerJoin({
                   placeholder="Digite seu nome"
                   maxLength={30}
                   className="w-full px-5 py-4.5 rounded-xl border-2 border-forest-light bg-ivory text-cocoa text-xl font-sans focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition-all"
-                  disabled={loading || !canJoin}
+                  disabled={loading || !canJoin || pendingJoin}
                   autoFocus
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={!canJoin || !name.trim() || loading}
+                disabled={!canJoin || !name.trim() || loading || pendingJoin}
                 className="w-full btn btn-primary text-xl py-5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {!canJoin
+                {pendingJoin
+                  ? 'Aguardando o organizador...'
+                  : !canJoin
                   ? sessionStatus === 'finished'
                     ? 'Aguardando novo jogo...'
                     : 'Aguardando sessão...'
@@ -91,28 +126,84 @@ export default function PlayerJoin({
 
           {/* Footer band */}
           <div className="px-8 py-6 sm:px-12 bg-ivory border-t border-cocoa/10 text-center">
-            {sessionStatus === 'none' && (
-              <p className="text-base sm:text-lg text-cocoa-light font-sans">
-                🧑‍🎄 Nenhuma sessão ativa ainda. Aguarde o coordenador criar uma nova sessão.
+            {pendingJoin ? (
+              <p className="text-base sm:text-lg text-cocoa-light font-sans animate-pulse">
+                ⏳ Tudo pronto! Assim que o organizador iniciar um novo jogo, você entrará automaticamente.
               </p>
-            )}
-            {sessionStatus === 'waiting' && (
-              <p className="text-base sm:text-lg text-cocoa-light font-sans">
-                🎄 Sessão aberta! Entre com seu nome para receber sua cartela.
-              </p>
-            )}
-            {sessionStatus === 'active' && (
-              <p className="text-base sm:text-lg text-cocoa-light font-sans">
-                🎮 Jogo em andamento. Entre agora para participar!
-              </p>
-            )}
-            {sessionStatus === 'finished' && (
-              <p className="text-base sm:text-lg text-cocoa-light font-sans">
-                🎉 Jogo finalizado. Aguarde o próximo jogo.
-              </p>
+            ) : (
+              <>
+                {sessionStatus === 'none' && (
+                  <p className="text-base sm:text-lg text-cocoa-light font-sans">
+                     Entre com seu nome para aguardar o início do jogo.
+                  </p>
+                )}
+                {sessionStatus === 'waiting' && (
+                  <p className="text-base sm:text-lg text-cocoa-light font-sans">
+                    🎄 Sessão aberta! Entre com seu nome para receber sua cartela.
+                  </p>
+                )}
+                {sessionStatus === 'active' && (
+                  <p className="text-base sm:text-lg text-cocoa-light font-sans">
+                    🎮 Jogo em andamento. Entre agora para participar!
+                  </p>
+                )}
+                {sessionStatus === 'finished' && (
+                  <p className="text-base sm:text-lg text-cocoa-light font-sans">
+                    🎉 Jogo finalizado. Entre para aguardar o próximo.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
+
+      {/* Conflict Resolution Modal */}
+      {conflictData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-cocoa-dark/80 backdrop-blur-sm" />
+          <div className="relative w-full max-w-md card-elevated-lg bg-ivory-warm rounded-2xl p-6 fade-in-up">
+            <h3 className="text-xl font-display font-bold text-cocoa mb-3">
+               🤔 Nome já em uso
+            </h3>
+            <p className="text-cocoa font-sans mb-4">
+              Já existe alguém chamado <span className="font-semibold text-cocoa-dark">{name}</span> jogando.
+            </p>
+            <div className="bg-ivory rounded-lg p-3 border border-cocoa/10 mb-6">
+              <p className="text-sm text-cocoa-light mb-1">Última conexão:</p>
+              <p className="text-sm font-semibold text-cocoa flex items-center gap-2">
+                <span>📱</span>
+                <span title={conflictData.existingDevice} className="truncate max-w-[250px]">
+                  {getDeviceName(conflictData.existingDevice)}
+                </span>
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${conflictData.alreadyConnected ? 'bg-forest' : 'bg-gray-400'}`} />
+                <span className="text-xs text-cocoa-light">
+                  {conflictData.alreadyConnected ? 'Online agora' : 'Offline'}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => onClaim && onClaim(name)}
+                className="w-full btn btn-primary py-3 text-lg"
+              >
+                Sim, sou eu! (Conectar)
+              </button>
+              <button
+                onClick={() => onCancelConflict && onCancelConflict()}
+                className="w-full btn btn-secondary py-3"
+              >
+                 Não, sou outra pessoa
+              </button>
+            </div>
+            <p className="mt-4 text-xs text-center text-cocoa-light">
+               Se você é outra pessoa, por favor escolha outro nome.
+            </p>
+          </div>
+        </div>
+      )}
 
         {/* Decorative element */}
         <div className="mt-10 text-center text-6xl fade-in-up stagger-4">

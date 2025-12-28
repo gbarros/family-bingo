@@ -15,6 +15,7 @@ interface GameControlsProps {
   drawnCount: number;
   totalNumbers: number;
   drawing?: boolean;
+  className?: string;
 }
 
 export default function GameControls({
@@ -29,17 +30,44 @@ export default function GameControls({
   drawnCount,
   totalNumbers,
   drawing = false,
+  className = '',
 }: GameControlsProps) {
   const [selectedMode, setSelectedMode] = useState<GameMode>(currentMode);
 
-  const handleModeChange = (mode: GameMode) => {
-    setSelectedMode(mode);
-    if (sessionId) {
-      onChangeMode(mode);
+  const handleModeChange = (mode: string) => {
+    let newModeStr = '';
+    const currentModes = selectedMode ? selectedMode.split(',') : [];
+
+    if (mode === 'blackout') {
+      // Blackout is exclusive: selecting it clears others. Deselecting it clears itself.
+      if (currentModes.includes('blackout')) {
+        newModeStr = '';
+      } else {
+        newModeStr = 'blackout';
+      }
+    } else {
+      // Line modes
+      // If currently blackout, clear it first
+      const activeModes = currentModes.includes('blackout') ? [] : [...currentModes];
+      
+      if (activeModes.includes(mode)) {
+        // Remove
+        const filtered = activeModes.filter((m) => m !== mode);
+        newModeStr = filtered.join(',');
+      } else {
+        // Add
+        activeModes.push(mode);
+        newModeStr = activeModes.join(',');
+      }
+    }
+
+    setSelectedMode(newModeStr);
+    if (sessionId && newModeStr) {
+      onChangeMode(newModeStr);
     }
   };
 
-  const gameModes: { value: GameMode; label: string }[] = [
+  const gameModes: { value: string; label: string }[] = [
     { value: 'horizontal', label: 'Linha Horizontal' },
     { value: 'vertical', label: 'Linha Vertical' },
     { value: 'diagonal', label: 'Diagonal' },
@@ -47,7 +75,7 @@ export default function GameControls({
   ];
 
   return (
-    <div className="card-elevated-lg bg-cocoa-light rounded-xl p-6 space-y-4">
+    <div className={`card-elevated-lg bg-cocoa-light rounded-xl p-6 space-y-4 ${className}`}>
       <h2 className="text-2xl font-display font-bold text-gold-light mb-4">
         Controles do Jogo
       </h2>
@@ -75,25 +103,29 @@ export default function GameControls({
       {/* Game mode selector */}
       <div>
         <label className="block text-ivory font-sans font-semibold mb-2">
-          Modo de Jogo
+          Modo de Jogo (Selecione combinações)
         </label>
         <div className="grid grid-cols-2 gap-2">
-          {gameModes.map((mode) => (
-            <button
-              key={mode.value}
-              onClick={() => handleModeChange(mode.value)}
-              className={`
-                px-4 py-2 rounded-lg font-sans font-bold text-sm transition-all
-                ${
-                  selectedMode === mode.value
-                    ? 'bg-gold text-cocoa-dark ring-2 ring-gold-light shadow-md'
-                    : 'bg-cocoa text-ivory border-2 border-gold hover:border-gold-light hover:bg-cocoa-dark hover:ring-2 hover:ring-gold/20'
-                }
-              `}
-            >
-              {mode.label}
-            </button>
-          ))}
+          {gameModes.map((mode) => {
+            const isActive = selectedMode.split(',').includes(mode.value);
+            return (
+              <button
+                key={mode.value}
+                onClick={() => handleModeChange(mode.value)}
+                className={`
+                  px-4 py-2 rounded-lg font-sans font-bold text-sm transition-all flex items-center justify-center gap-2
+                  ${
+                    isActive
+                      ? 'bg-gold text-cocoa-dark ring-2 ring-gold-light shadow-md'
+                      : 'bg-cocoa text-ivory border-2 border-gold hover:border-gold-light hover:bg-cocoa-dark hover:ring-2 hover:ring-gold/20'
+                  }
+                `}
+              >
+                {isActive && <span>✓</span>}
+                {mode.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

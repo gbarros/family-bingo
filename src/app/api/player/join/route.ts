@@ -34,6 +34,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Capture User-Agent
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    // Check for existing player name collision in this session
+    const players = getPlayersBySession(session.id);
+    const existingPlayer = players.find(
+      (p) => p.name.trim().toLowerCase() === name.trim().toLowerCase()
+    );
+
+    if (existingPlayer) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Name taken',
+          conflict: true,
+          existingDevice: existingPlayer.user_agent || 'Unknown Device',
+          alreadyConnected: existingPlayer.connected,
+        },
+        { status: 409 }
+      );
+    }
+
     // Generate unique client ID
     const clientId = uuidv4();
 
@@ -41,15 +63,12 @@ export async function POST(request: NextRequest) {
     const card = generateCard();
 
     // Create player
-    const player = createPlayer(session.id, name.trim(), clientId, card);
-
-    // Get player count
-    const players = getPlayersBySession(session.id);
+    const player = createPlayer(session.id, name.trim(), clientId, card, userAgent);
 
     // Broadcast player joined
     await broadcast({
       type: 'playerJoined',
-      data: { name: player.name, playerCount: players.length },
+      data: { name: player.name, playerCount: players.length + 1 },
     });
 
     return NextResponse.json<JoinSessionResponse>({

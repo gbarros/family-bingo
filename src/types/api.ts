@@ -60,12 +60,13 @@ export interface ReconnectRequest {
 
 export interface ReconnectResponse {
   success: boolean;
-  playerId: number;
   name: string;
-  card: number[];
-  markings: boolean[]; // 25 positions
+  playerId: number;
+  clientId: string; // Added field
+  card: number[]; // 25 numbers
+  markings: boolean[]; // 25 booleans
   sessionId: number;
-  sessionStatus: GameStatus;
+  sessionStatus: 'active' | 'waiting' | 'finished';
 }
 
 export interface MarkNumberRequest {

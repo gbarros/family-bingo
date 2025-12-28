@@ -9,8 +9,12 @@ export async function GET(request: Request) {
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
 
+  // Get clientId from URL if present
+  const { searchParams } = new URL(request.url);
+  const clientId = searchParams.get('clientId') || undefined;
+
   // Add connection to manager
-  addConnection(writer);
+  addConnection(writer, clientId);
 
   // Send initial heartbeat
   sendEvent(writer, { type: 'heartbeat', data: { timestamp: Date.now() } });
@@ -24,7 +28,7 @@ export async function GET(request: Request) {
   request.signal.addEventListener('abort', () => {
     clearInterval(heartbeatInterval);
     removeConnection(writer);
-    writer.close().catch(() => {});
+    writer.close().catch(() => { });
   });
 
   return new Response(readable, {

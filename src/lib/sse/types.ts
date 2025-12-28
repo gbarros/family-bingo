@@ -5,17 +5,18 @@ export type SSEEvent =
   | { type: 'gameStateChanged'; data: { status: string; mode: string } }
   | { type: 'playerJoined'; data: { name: string; playerCount: number } }
   | {
-      type: 'playerDisconnected';
-      data: {
-        // Some callers may not know the name (e.g. admin reset by id)
-        name?: string;
-        playerId?: number;
-        playerCount: number;
-        wiped?: boolean;
-      };
-    }
+    type: 'playerDisconnected';
+    data: {
+      // Some callers may not know the name (e.g. admin reset by id)
+      name?: string;
+      playerId?: number;
+      playerCount: number;
+      wiped?: boolean;
+    };
+  }
   | { type: 'gameEnded'; data: { winner: string; playerName: string } }
-  | { type: 'heartbeat'; data: { timestamp: number } };
+  | { type: 'heartbeat'; data: { timestamp: number } }
+  | { type: 'playerPresence'; data: { clientId: string; online: boolean; deviceCount: number } };
 
 export interface SSEConnection {
   writer: WritableStreamDefaultWriter;

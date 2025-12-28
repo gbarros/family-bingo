@@ -6,6 +6,25 @@ import { createTablesSQL } from './schema';
 import { hashSync } from 'bcrypt';
 import path from 'path';
 
+// Migration helper
+function ensureColumns(db: Database.Database) {
+  try {
+    const tableInfo = db.prepare("PRAGMA table_info(players)").all() as any[];
+    const columns = new Set(tableInfo.map(c => c.name));
+
+    if (!columns.has('user_agent')) {
+      console.log('[DB] Migrating: Adding user_agent to players');
+      db.prepare("ALTER TABLE players ADD COLUMN user_agent TEXT").run();
+    }
+    if (!columns.has('last_active')) {
+      console.log('[DB] Migrating: Adding last_active to players');
+      db.prepare("ALTER TABLE players ADD COLUMN last_active INTEGER").run();
+    }
+  } catch (err) {
+    console.error('[DB] Migration failed:', err);
+  }
+}
+
 const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'bingo.db');
 
 let db: Database.Database | null = null;
@@ -15,6 +34,13 @@ let db: Database.Database | null = null;
  */
 export function getDatabase(): Database.Database {
   if (!db) {
+    // Ensure data directory exists
+    const dirname = path.dirname(DB_PATH);
+    const fs = require('fs');
+    if (!fs.existsSync(dirname)) {
+      fs.mkdirSync(dirname, { recursive: true });
+    }
+
     db = new Database(DB_PATH, {
       verbose: process.env.NODE_ENV === 'development' ? console.log : undefined,
     });
@@ -24,6 +50,9 @@ export function getDatabase(): Database.Database {
 
     // Initialize schema
     db.exec(createTablesSQL);
+
+    // Run migrations
+    ensureColumns(db);
 
     // Initialize manager password if not exists
     initializeManagerPassword(db);

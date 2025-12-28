@@ -28,65 +28,144 @@ export default function PlayerPage() {
   const [previousMarkings, setPreviousMarkings] = useState<boolean[] | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [resettingMe, setResettingMe] = useState(false);
+  // SSE connection - pass clientId if we have one to track presence
+  const sseUrl = clientId ? `/api/events?clientId=${clientId}` : '/api/events';
+  const { events, isConnected } = useSSE(sseUrl);
 
-  // SSE connection
-  const { events, isConnected } = useSSE('/api/events');
+  const [pendingName, setPendingName] = useState<string | null>(null);
+  const [conflictData, setConflictData] = useState<{ existingDevice: string; alreadyConnected: boolean } | null>(null);
+  const [kicked, setKicked] = useState(false);
 
-  // Initialize: check localStorage for existing clientId
-  useEffect(() => {
-    const stored = localStorage.getItem('bingoClientId');
-    if (stored) {
-      // Try to reconnect
-      attemptReconnect(stored);
-    } else {
-      setLoading(false);
+  // Define critical callbacks first to be used in effects
+
+  const fetchGameState = useCallback(async () => {
+    try {
+      const response = await fetch('/api/session', { cache: 'no-store' });
+      const data = await response.json();
+
+      if (data.success && data.session) {
+        setActiveSessionId(data.session.id);
+        setDrawnNumbers(data.drawnNumbers);
+        setCurrentNumber(data.currentNumber);
+        setGameStatus(data.session.status);
+      } else {
+        setActiveSessionId(null);
+        // If we aren't in a finished game view, show "no session" state.
+        setGameStatus((prev) => (prev === 'finished' ? prev : 'none'));
+      }
+    } catch (error) {
+      console.error('Error fetching game state:', error);
     }
-  }, []);
+  }, []); // Stable dependency
 
-  // Handle SSE events
-  useEffect(() => {
-    if (events.length === 0) return;
+  const handleJoin = useCallback(async (name: string, force = false) => {
+    setJoining(true);
+    setConflictData(null); // Clear any previous conflict
 
-    const latestEvent = events[events.length - 1];
+    // If no session is active, just store the name and wait
+    // BUT if 'force' is true (called from SSE event), we proceed regardless of current state
+    if (!force && (gameStatus === 'none' || gameStatus === 'finished')) {
+       // Only if we are not already pending with this name
+       if (pendingName !== name) {
+          setPendingName(name);
+       }
+       setJoining(false); 
+       return;
+    }
 
-    switch (latestEvent.type) {
-      case 'numberDrawn':
-        setDrawnNumbers((prev) => {
-          const n = latestEvent.data.number as number;
-          return prev.includes(n) ? prev : [...prev, n];
-        });
-        setCurrentNumber(latestEvent.data.number);
-        break;
+    try {
+      const response = await fetch('/api/player/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
 
-      case 'gameStateChanged':
-        // Keep UI reactive to session lifecycle changes (create/start/mode changes).
-        if (latestEvent.data.status) {
-          setGameStatus(latestEvent.data.status as any);
-        }
-        // Resync from source of truth in case we missed any events.
+      if (response.ok) {
+        const data: JoinSessionResponse = await response.json();
+
+        setClientId(data.clientId);
+        setPlayerId(data.playerId);
+        setPlayerName(name);
+        setPendingName(null);
+        localStorage.setItem('bingoLastPlayerName', name);
+        setCard(data.card);
+        setMySessionId(data.sessionId);
+        setNewSessionAvailable(false);
+
+        // Initialize markings with FREE space marked
+        const initialMarkings = Array(25).fill(false);
+        initialMarkings[12] = true; // FREE space
+        setMarkings(initialMarkings);
+
+        // Save clientId to localStorage
+        localStorage.setItem('bingoClientId', data.clientId);
+
+        // Fetch current game state
         fetchGameState();
-        break;
-
-      case 'gameEnded':
-        setGameStatus('finished');
-        // Show winner notification
-        if (latestEvent.data.playerName !== playerName) {
-          alert(`🎉 ${latestEvent.data.winner} ganhou! BINGO!`);
+      } else if (response.status === 409) {
+          // Name conflict
+          const errorData = await response.json();
+          setConflictData({
+            existingDevice: errorData.existingDevice,
+            alreadyConnected: errorData.alreadyConnected,
+          });
+      } else {
+        const error = await response.json();
+        if (response.status === 404) {
+           // Session might have ended just now?
+           alert('Não foi possível entrar. A sessão pode ter encerrado.');
+        } else {
+           alert(error.error || 'Erro ao entrar no jogo');
         }
-        // Resync to reflect end-of-game state.
+      }
+    } catch (error) {
+      console.error('Join error:', error);
+      alert('Erro ao conectar. Tente novamente.');
+    } finally {
+      setJoining(false);
+    }
+  }, [gameStatus, pendingName, fetchGameState]);
+
+  const handleClaim = async (name: string) => {
+    setJoining(true);
+    try {
+      const response = await fetch('/api/player/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+
+      if (response.ok) {
+        const data: ReconnectResponse = await response.json();
+        setClientId(data.clientId);
+        setPlayerId(data.playerId);
+        setPlayerName(data.name);
+        setPendingName(null);
+        setConflictData(null);
+        localStorage.setItem('bingoLastPlayerName', data.name);
+        setCard(data.card);
+        setMarkings(data.markings);
+        setMySessionId(data.sessionId);
+        setGameStatus(data.sessionStatus);
+        
+        // Save clientId to localStorage
+        localStorage.setItem('bingoClientId', data.clientId);
+
+        // Fetch current game state
         fetchGameState();
-        break;
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Erro ao recuperar sessão.');
+      }
+    } catch (error) {
+      console.error('Claim error:', error);
+      alert('Erro ao conectar.');
+    } finally {
+      setJoining(false);
     }
-  }, [events, playerName]);
+  };
 
-  // When SSE connects/reconnects, resync state to avoid stale UI.
-  useEffect(() => {
-    if (isConnected) {
-      fetchGameState();
-    }
-  }, [isConnected]);
-
-  const attemptReconnect = async (storedClientId: string) => {
+  const attemptReconnect = useCallback(async (storedClientId: string) => {
     try {
       const response = await fetch('/api/player/reconnect', {
         method: 'POST',
@@ -117,39 +196,24 @@ export default function PlayerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchGameState]);
 
-  const fetchGameState = async () => {
+  const resetMe = async () => {
+    if (!confirm('Tem certeza que deseja sair deste dispositivo? Seu jogo será mantido e você poderá reconectar depois.')) return;
+
+    setResettingMe(true);
     try {
-      const response = await fetch('/api/session', { cache: 'no-store' });
-      const data = await response.json();
-
-      if (data.success && data.session) {
-        setActiveSessionId(data.session.id);
-        setDrawnNumbers(data.drawnNumbers);
-        setCurrentNumber(data.currentNumber);
-        setGameStatus(data.session.status);
-      } else {
-        setActiveSessionId(null);
-        // If we aren't in a finished game view, show "no session" state.
-        setGameStatus((prev) => (prev === 'finished' ? prev : 'none'));
-      }
+      // local storage cleanup
+      localStorage.removeItem('bingoClientId');
+      // We keep 'bingoLastPlayerName' to make it easier to rejoin if it's the same person
+      
+      // Reload the page to reset all state
+      window.location.reload();
     } catch (error) {
-      console.error('Error fetching game state:', error);
+      console.error('Logout error:', error);
+      setResettingMe(false);
     }
   };
-
-  // If a new session replaces the one this player belongs to, force re-join.
-  useEffect(() => {
-    if (!activeSessionId || !mySessionId) return;
-    if (activeSessionId === mySessionId) return;
-
-    // New session detected: keep old card visible for manual conference,
-    // but prevent confusion by surfacing a clear "join new game" CTA.
-    setNewSessionAvailable(true);
-    setGameStatus('finished');
-    alert('✨ Uma nova sessão começou. Quando quiser, toque em "Participar do novo jogo" para receber uma nova cartela.');
-  }, [activeSessionId, mySessionId]);
 
   const joinNewGame = async () => {
     if (!playerName?.trim()) return;
@@ -163,81 +227,89 @@ export default function PlayerPage() {
     await handleJoin(playerName);
   };
 
-  const resetMe = async () => {
-    setResettingMe(true);
-    try {
-      const storedClientId = localStorage.getItem('bingoClientId');
-      if (storedClientId) {
-        await fetch('/api/player/reset', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clientId: storedClientId }),
+  // Effects
+
+  // Initialize: check localStorage for existing clientId
+  useEffect(() => {
+    const stored = localStorage.getItem('bingoClientId');
+    if (stored) {
+      // Try to reconnect
+      attemptReconnect(stored);
+    } else {
+      setLoading(false);
+    }
+  }, [attemptReconnect]);
+
+  // Handle SSE events
+  useEffect(() => {
+    if (events.length === 0) return;
+
+    const latestEvent = events[events.length - 1];
+
+    switch (latestEvent.type) {
+      case 'numberDrawn':
+        setDrawnNumbers((prev) => {
+          const n = latestEvent.data.number as number;
+          return prev.includes(n) ? prev : [...prev, n];
         });
-      }
-    } catch (error) {
-      console.error('Error resetting player:', error);
-    } finally {
-      localStorage.removeItem('bingoClientId');
-      // Keep bingoLastPlayerName for convenience (prefill)
-      setClientId(null);
-      setPlayerId(null);
-      setPlayerName('');
-      setMySessionId(null);
-      setCard([]);
-      setMarkings(Array(25).fill(false));
-      setDrawnNumbers([]);
-      setCurrentNumber(null);
-      setPreviousCard(null);
-      setPreviousMarkings(null);
-      setNewSessionAvailable(false);
-      setSettingsOpen(false);
-      setResettingMe(false);
+        setCurrentNumber(latestEvent.data.number);
+        break;
+
+      case 'gameStateChanged':
+        // Keep UI reactive to session lifecycle changes (create/start/mode changes).
+        if (latestEvent.data.status) {
+          const newStatus = latestEvent.data.status as any;
+          setGameStatus(newStatus);
+          
+          // If we were waiting for a session to start, auto-join now?
+          // Only if status became 'waiting' (session created)
+          if (newStatus === 'waiting' && pendingName) {
+            handleJoin(pendingName, true); // Force join immediately
+          }
+        }
+        // Resync from source of truth
+        fetchGameState();
+        break;
+
+      case 'playerDisconnected':
+        // Check if *I* was the one disconnected (by admin)
+        if (latestEvent.data.playerId === playerId) {
+          localStorage.removeItem('bingoClientId');
+          setKicked(true);
+        }
+        fetchGameState();
+        break;
+
+      case 'gameEnded':
+        setGameStatus('finished');
+        // Show winner notification
+        if (latestEvent.data.playerName !== playerName) {
+          alert(`🎉 ${latestEvent.data.winner} ganhou! BINGO!`);
+        }
+        // Resync to reflect end-of-game state.
+        fetchGameState();
+        break;
+    }
+  }, [events, playerName, pendingName, handleJoin, fetchGameState]);
+
+  // When SSE connects/reconnects, resync state to avoid stale UI.
+  useEffect(() => {
+    if (isConnected) {
       fetchGameState();
     }
-  };
+  }, [isConnected, fetchGameState]);
 
-  const handleJoin = async (name: string) => {
-    setJoining(true);
+  // If a new session replaces the one this player belongs to, force re-join.
+  useEffect(() => {
+    if (!activeSessionId || !mySessionId) return;
+    if (activeSessionId === mySessionId) return;
 
-    try {
-      const response = await fetch('/api/player/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-
-      if (response.ok) {
-        const data: JoinSessionResponse = await response.json();
-
-        setClientId(data.clientId);
-        setPlayerId(data.playerId);
-        setPlayerName(name);
-        localStorage.setItem('bingoLastPlayerName', name);
-        setCard(data.card);
-        setMySessionId(data.sessionId);
-        setNewSessionAvailable(false);
-
-        // Initialize markings with FREE space marked
-        const initialMarkings = Array(25).fill(false);
-        initialMarkings[12] = true; // FREE space
-        setMarkings(initialMarkings);
-
-        // Save clientId to localStorage
-        localStorage.setItem('bingoClientId', data.clientId);
-
-        // Fetch current game state
-        fetchGameState();
-      } else {
-        const error = await response.json();
-        alert(error.error || 'Erro ao entrar no jogo');
-      }
-    } catch (error) {
-      console.error('Join error:', error);
-      alert('Erro ao conectar. Tente novamente.');
-    } finally {
-      setJoining(false);
-    }
-  };
+    // New session detected: keep old card visible for manual conference,
+    // but prevent confusion by surfacing a clear "join new game" CTA.
+    setNewSessionAvailable(true);
+    setGameStatus('finished');
+    alert('✨ Uma nova sessão começou. Quando quiser, toque em "Participar do novo jogo" para receber uma nova cartela.');
+  }, [activeSessionId, mySessionId]);
 
   const handleToggleMark = async (position: number, marked: boolean) => {
     if (!playerId) return;
@@ -270,6 +342,26 @@ export default function PlayerPage() {
     );
   }
 
+  if (kicked) {
+    return (
+      <div className="min-h-screen bg-cocoa-dark flex items-center justify-center p-4">
+        <div className="card-elevated-lg bg-ivory-warm p-8 text-center max-w-md w-full fade-in-up">
+           <div className="text-6xl mb-4">🚫</div>
+           <h2 className="text-2xl font-display font-bold text-cocoa mb-2">Você foi removido</h2>
+           <p className="text-cocoa-light mb-6">
+             O organizador removeu você da partida.
+           </p>
+           <button 
+             onClick={() => window.location.reload()}
+             className="w-full btn btn-primary"
+           >
+             Voltar ao Início
+           </button>
+        </div>
+      </div>
+    );
+  }
+
   // Not joined yet
   if (!clientId || !playerId) {
     return (
@@ -277,9 +369,13 @@ export default function PlayerPage() {
         <ChristmasBackground />
         <PlayerJoin
           onJoin={handleJoin}
+          onClaim={handleClaim}
           loading={joining}
           sessionStatus={gameStatus}
-          canJoin={gameStatus === 'waiting' || gameStatus === 'active'}
+          canJoin={true}
+          pendingJoin={!!pendingName}
+          conflictData={conflictData}
+          onCancelConflict={() => setConflictData(null)}
         />
       </>
     );
@@ -324,7 +420,7 @@ export default function PlayerPage() {
                   onClick={resetMe}
                   disabled={resettingMe}
                 >
-                  {resettingMe ? 'Limpando...' : 'Esquecer meu usuário'}
+                  {resettingMe ? 'Saindo...' : 'Sair deste dispositivo'}
                 </button>
 
                 <button

@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS players (
     client_id TEXT NOT NULL UNIQUE,
     card_data TEXT NOT NULL,
     connected BOOLEAN DEFAULT 1,
+    user_agent TEXT,
+    last_active INTEGER,
     joined_at INTEGER NOT NULL,
     FOREIGN KEY (session_id) REFERENCES sessions(id)
 );

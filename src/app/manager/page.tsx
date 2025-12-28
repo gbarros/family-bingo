@@ -5,6 +5,8 @@ import ManagerAuth from '@/components/manager/ManagerAuth';
 import GameControls from '@/components/manager/GameControls';
 import PlayerList from '@/components/manager/PlayerList';
 import DrawnHistory from '@/components/manager/DrawnHistory';
+import RecentNumbers from '@/components/manager/RecentNumbers';
+import PlayerStatusPanel from '@/components/manager/PlayerStatusPanel';
 import CurrentNumber from '@/components/player/CurrentNumber';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import { useSSE } from '@/lib/hooks/useSSE';
@@ -66,6 +68,22 @@ export default function ManagerPage() {
       case 'playerDisconnected':
         // Refetch players
         fetchGameState();
+        break;
+
+      // Handle presence updates (online/offline and device count)
+      case 'playerPresence':
+        setPlayers((prev) =>
+          prev.map((p) => {
+            if (p.client_id === latestEvent.data.clientId) {
+              return {
+                ...p,
+                connected: latestEvent.data.online,
+                deviceCount: latestEvent.data.deviceCount,
+              };
+            }
+            return p;
+          })
+        );
         break;
 
       case 'gameEnded':
@@ -304,6 +322,7 @@ export default function ManagerPage() {
     );
   }
 
+
   return (
     <div className="min-h-screen bg-gradient-cocoa p-4 md:p-6">
       {/* Settings gear */}
@@ -385,9 +404,7 @@ export default function ManagerPage() {
           <h1 className="text-4xl md:text-5xl font-display font-bold text-gold-light mb-2">
             Painel do Coordenador
           </h1>
-          <p className="text-xl text-ivory font-sans">
-            Controle total do jogo 🎮
-          </p>
+
           {!isConnected && (
             <p className="text-sm text-crimson-light mt-2">
               ⚠ Reconectando...
@@ -395,28 +412,50 @@ export default function ManagerPage() {
           )}
         </div>
 
-        {/* Current number (if active) */}
-        {sessionStatus === 'active' && currentNumber && (
-          <div className="fade-in-up stagger-1">
-            <CurrentNumber number={currentNumber} />
-          </div>
-        )}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Main Column */}
+          <div className="w-full lg:w-3/4 space-y-6">
+            {/* Current number (if active) */}
+            {sessionStatus === 'active' && currentNumber && (
+              <div className="fade-in-up stagger-1">
+                <CurrentNumber number={currentNumber} />
+              </div>
+            )}
 
-        {/* Game controls */}
-        <div className="fade-in-up stagger-2">
-          <GameControls
-            sessionStatus={sessionStatus}
-            currentMode={gameMode}
-            sessionId={sessionId}
-            onCreateSession={handleCreateSession}
-            onStartGame={handleStartGame}
-            onDrawNumber={handleDrawNumber}
-            onChangeMode={handleChangeMode}
-            onNewGame={handleNewGame}
-            drawnCount={drawnNumbers.length}
-            totalNumbers={75}
-            drawing={drawing}
-          />
+            {/* Game controls & Stats */}
+            <div className="flex flex-col lg:flex-row gap-6 fade-in-up stagger-2">
+              {/* Left col: Controls */}
+              <div className="w-full lg:w-1/2">
+                <GameControls
+                  className="h-full"
+                  sessionStatus={sessionStatus}
+                  currentMode={gameMode}
+                  sessionId={sessionId}
+                  onCreateSession={handleCreateSession}
+                  onStartGame={handleStartGame}
+                  onDrawNumber={handleDrawNumber}
+                  onChangeMode={handleChangeMode}
+                  onNewGame={handleNewGame}
+                  drawnCount={drawnNumbers.length}
+                  totalNumbers={75}
+                  drawing={drawing}
+                />
+              </div>
+              
+              <div className="w-full lg:w-1/2 lg:relative">
+                 <div className="lg:absolute lg:inset-0 h-full">
+                    <PlayerStatusPanel players={players} />
+                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar Column: Recent History */}
+          <div className="w-full lg:w-1/4 fade-in-up stagger-2 lg:relative">
+             <div className="lg:absolute lg:inset-0 h-full">
+               <RecentNumbers numbers={drawnNumbers} />
+             </div>
+          </div>
         </div>
 
         {/* Players */}

@@ -1,7 +1,8 @@
 // Game types for Christmas Bingo
 
 export type GameStatus = 'waiting' | 'active' | 'finished';
-export type GameMode = 'horizontal' | 'vertical' | 'diagonal' | 'blackout';
+// Can be a single mode or comma-separated list (e.g. 'horizontal,vertical')
+export type GameMode = string;
 
 export interface Session {
   id: number;
@@ -20,6 +21,8 @@ export interface Player {
   client_id: string;
   card_data: string; // JSON string of number[]
   connected: boolean;
+  user_agent?: string;
+  last_active?: number;
   joined_at: number;
 }
 
@@ -41,6 +44,7 @@ export interface PlayerMarking {
 // Helper types for client-side use
 export interface PlayerWithCard extends Omit<Player, 'card_data'> {
   card: number[]; // Parsed card_data
+  deviceCount?: number;
 }
 
 export interface GameState {

@@ -22,22 +22,16 @@ export function validateBingo(
     markings[FREE_SPACE_INDEX] = true;
   }
 
-  switch (mode) {
-    case 'horizontal':
-      return checkHorizontal(markings);
+  const modes = mode.split(',');
 
-    case 'vertical':
-      return checkVertical(markings);
-
-    case 'diagonal':
-      return checkDiagonal(markings);
-
-    case 'blackout':
-      return checkBlackout(markings);
-
-    default:
-      return false;
+  for (const m of modes) {
+    if (m === 'blackout' && checkBlackout(markings)) return true;
+    if (m === 'horizontal' && checkHorizontal(markings)) return true;
+    if (m === 'vertical' && checkVertical(markings)) return true;
+    if (m === 'diagonal' && checkDiagonal(markings)) return true;
   }
+
+  return false;
 }
 
 /**
@@ -119,22 +113,21 @@ export function getWinningPattern(
   markings: boolean[],
   mode: GameMode
 ): string | null {
-  if (!validateBingo(card, markings, mode)) {
-    return null;
+  // Ensure FREE space
+  if (!markings[FREE_SPACE_INDEX]) {
+    markings = [...markings];
+    markings[FREE_SPACE_INDEX] = true;
   }
 
-  switch (mode) {
-    case 'horizontal':
-      return getHorizontalPattern(markings);
-    case 'vertical':
-      return getVerticalPattern(markings);
-    case 'diagonal':
-      return getDiagonalPattern(markings);
-    case 'blackout':
-      return 'Cartela Cheia';
-    default:
-      return null;
-  }
+  const modes = mode.split(',');
+
+  // Priority: Blackout > Horizontal > Vertical > Diagonal
+  if (modes.includes('blackout') && checkBlackout(markings)) return 'Cartela Cheia';
+  if (modes.includes('horizontal') && checkHorizontal(markings)) return getHorizontalPattern(markings);
+  if (modes.includes('vertical') && checkVertical(markings)) return getVerticalPattern(markings);
+  if (modes.includes('diagonal') && checkDiagonal(markings)) return getDiagonalPattern(markings);
+
+  return null;
 }
 
 function getHorizontalPattern(markings: boolean[]): string {

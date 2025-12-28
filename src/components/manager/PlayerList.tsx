@@ -39,20 +39,46 @@ export default function PlayerList({ players, onValidate }: PlayerListProps) {
             key={player.id}
             onClick={() => handleValidateClick(player.id, player.name)}
             disabled={validating === player.id}
-            className="card-elevated bg-cocoa rounded-lg p-4 text-left transition-all hover:bg-cocoa-dark hover:ring-2 hover:ring-gold/25 active:brightness-95 disabled:opacity-50 group"
+            className={`card-elevated bg-cocoa rounded-lg p-4 text-left transition-all hover:ring-2 hover:ring-gold/25 active:brightness-95 group relative ${
+              !player.connected ? 'opacity-60 grayscale' : 'hover:bg-cocoa-dark'
+            }`}
+            title={`ID: ${player.id}\nDispositivo: ${player.user_agent || 'Desconhecido'}${player.deviceCount && player.deviceCount > 1 ? `\nConexões: ${player.deviceCount} (múltiplas abas/aparelhos)` : ''}`}
           >
             {/* Connection status indicator */}
             <div className="flex items-center gap-2 mb-2">
               <div
                 className={`w-3 h-3 rounded-full ${
                   player.connected
-                    ? 'bg-forest-light animate-pulse'
-                    : 'bg-crimson'
+                    ? 'bg-forest-light animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]'
+                    : 'bg-gray-500'
                 }`}
               ></div>
-              <span className="text-lg font-display font-semibold text-ivory group-hover:text-gold-light transition-colors">
-                {player.name}
-              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-display font-semibold text-ivory group-hover:text-gold-light transition-colors truncate block">
+                    {player.name}
+                  </span>
+                  {player.deviceCount && player.deviceCount > 1 && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-gold text-cocoa text-[10px] font-bold shadow-sm" title={`${player.deviceCount} dispositivos conectados`}>
+                      {player.deviceCount}
+                    </span>
+                  )}
+                </div>
+                {!player.connected && (
+                  <span className="text-xs text-ivory/50 font-sans block -mt-1">
+                    (Offline)
+                  </span>
+                )}
+                {player.user_agent && (
+                   <span className="text-[10px] text-ivory/30 font-mono truncate block max-w-full">
+                     {/* Simplified UA: extract OS/Browser roughly if possible, else full string in tooltip */}
+                     {player.user_agent.includes('iPhone') ? '📱 iPhone' :
+                      player.user_agent.includes('Android') ? '📱 Android' :
+                      player.user_agent.includes('Macintosh') ? '💻 Mac' :
+                      player.user_agent.includes('Windows') ? '💻 PC' : 'Unknown Device'}
+                   </span>
+                )}
+              </div>
             </div>
 
             {/* Card preview (first 5 numbers) */}

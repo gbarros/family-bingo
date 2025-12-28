@@ -104,15 +104,16 @@ export function createPlayer(
   sessionId: number,
   name: string,
   clientId: string,
-  cardData: number[]
+  cardData: number[],
+  userAgent?: string
 ): Player {
   const db = getDatabase();
   const now = Date.now();
 
   const result = db.prepare(`
-    INSERT INTO players (session_id, name, client_id, card_data, connected, joined_at)
-    VALUES (?, ?, ?, ?, 1, ?)
-  `).run(sessionId, name, clientId, JSON.stringify(cardData), now);
+    INSERT INTO players (session_id, name, client_id, card_data, connected, user_agent, last_active, joined_at)
+    VALUES (?, ?, ?, ?, 1, ?, ?, ?)
+  `).run(sessionId, name, clientId, JSON.stringify(cardData), userAgent || null, now, now);
 
   return {
     id: result.lastInsertRowid as number,
@@ -121,6 +122,8 @@ export function createPlayer(
     client_id: clientId,
     card_data: JSON.stringify(cardData),
     connected: true,
+    user_agent: userAgent,
+    last_active: now,
     joined_at: now,
   };
 }
@@ -155,9 +158,23 @@ export function getPlayersBySession(sessionId: number): Player[] {
 /**
  * Update player connection status
  */
-export function updatePlayerConnection(playerId: number, connected: boolean): void {
+export function updatePlayerConnection(playerId: number, connected: boolean, userAgent?: string): void {
   const db = getDatabase();
-  db.prepare('UPDATE players SET connected = ? WHERE id = ?').run(connected ? 1 : 0, playerId);
+
+  if (userAgent) {
+    db.prepare('UPDATE players SET connected = ?, last_active = ?, user_agent = ? WHERE id = ?').run(
+      connected ? 1 : 0,
+      Date.now(),
+      userAgent,
+      playerId
+    );
+  } else {
+    db.prepare('UPDATE players SET connected = ?, last_active = ? WHERE id = ?').run(
+      connected ? 1 : 0,
+      Date.now(),
+      playerId
+    );
+  }
 }
 
 /**

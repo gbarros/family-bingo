@@ -39,8 +39,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update player connection status
-    updatePlayerConnection(player.id, true);
+    // Capture User-Agent
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    // Update player connection status and UA
+    updatePlayerConnection(player.id, true, userAgent);
 
     // Get player's markings
     const markings = getPlayerMarkingsArray(player.id);
@@ -51,6 +54,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json<ReconnectResponse>({
       success: true,
       playerId: player.id,
+      clientId: player.client_id, // Added field
       name: player.name,
       card,
       markings,
