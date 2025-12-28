@@ -6,7 +6,7 @@ import type { GameMode, GameStatus } from '@/types/game';
 interface GameControlsProps {
   sessionStatus: GameStatus | null;
   currentMode: GameMode;
-  sessionId: number | null;
+  sessionId: string | number | null;
   onCreateSession: (mode: GameMode) => void;
   onStartGame: () => void;
   onDrawNumber: () => void;
@@ -149,7 +149,7 @@ export default function GameControls({
 
       {/* Action buttons */}
       <div className="grid grid-cols-2 gap-3 pt-4">
-        {!sessionId && (
+        {(!sessionId || !sessionStatus) && (
           <button
             onClick={() => onCreateSession(selectedMode)}
             className="col-span-2 btn btn-secondary"

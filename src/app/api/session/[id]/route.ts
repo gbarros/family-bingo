@@ -39,7 +39,7 @@ export async function PATCH(
 
     // Update game mode if provided
     if (body.gameMode) {
-      updateSessionGameMode(sessionId, body.gameMode);
+      updateSessionGameMode(sessionId, body.gameMode as any);
 
       broadcast({
         type: 'gameStateChanged',

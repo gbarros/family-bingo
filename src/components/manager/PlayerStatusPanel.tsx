@@ -56,9 +56,9 @@ export default function PlayerStatusPanel({ players, onExpand }: PlayerStatusPan
             className="grid grid-flow-col gap-x-3 h-full"
             style={{ gridTemplateRows: `repeat(${ROW_LIMIT}, 1fr)` }}
           >
-            {sortedPlayers.map((player) => (
+            {sortedPlayers.map((player, idx) => (
               <div 
-                key={player.id} 
+                key={`${player.id}-${idx}`} 
                 className={`flex items-center gap-1.5 truncate px-2 rounded hover:bg-ivory/5 transition-colors ${textSizeClass}`}
                 title={player.name}
               >

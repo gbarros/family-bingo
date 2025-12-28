@@ -2,7 +2,7 @@
 // Using better-sqlite3 synchronous API
 
 import { getDatabase } from './index';
-import type { Session, Player, DrawnNumber, PlayerMarking } from '@/types/game';
+import type { Session, Player, DrawnNumber, PlayerMarking, GameMode } from '@/types/game';
 
 // ============================================================================
 // SESSION QUERIES
@@ -26,7 +26,7 @@ export function getActiveSession(): Session | null {
 /**
  * Create new session
  */
-export function createSession(gameMode: 'horizontal' | 'vertical' | 'diagonal' | 'blackout'): Session {
+export function createSession(gameMode: GameMode): Session {
   const db = getDatabase();
   const now = Date.now();
 
@@ -83,7 +83,7 @@ export function updateSessionStatus(
  */
 export function updateSessionGameMode(
   sessionId: number,
-  gameMode: 'horizontal' | 'vertical' | 'diagonal' | 'blackout'
+  gameMode: GameMode
 ): void {
   const db = getDatabase();
   db.prepare(`

@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { SSEEvent } from '@/lib/sse/types';
 
-export function useSSE(url: string) {
+export function useSSE(url: string | null) {
   const [events, setEvents] = useState<SSEEvent[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const connect = useCallback(() => {
+    if (!url) return null;
     console.log('[SSE] Connecting to', url);
     const eventSource = new EventSource(url);
 
@@ -52,8 +53,10 @@ export function useSSE(url: string) {
     const eventSource = connect();
 
     return () => {
-      console.log('[SSE] Disconnecting');
-      eventSource.close();
+      if (eventSource) {
+        console.log('[SSE] Disconnecting');
+        eventSource.close();
+      }
     };
   }, [connect]);
 

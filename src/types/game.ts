@@ -15,7 +15,7 @@ export interface Session {
 }
 
 export interface Player {
-  id: number;
+  id: number | string;
   session_id: number;
   name: string;
   client_id: string;

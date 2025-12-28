@@ -5,15 +5,15 @@ import type { PlayerWithCard } from '@/types/game';
 
 interface PlayerListProps {
   players: PlayerWithCard[];
-  onValidate: (playerId: number, playerName: string) => void;
+  onValidate: (playerId: string | number) => void;
 }
 
 export default function PlayerList({ players, onValidate }: PlayerListProps) {
-  const [validating, setValidating] = useState<number | null>(null);
+  const [validating, setValidating] = useState<string | number | null>(null);
 
-  const handleValidateClick = async (playerId: number, playerName: string) => {
+  const handleValidateClick = async (playerId: string | number, playerName: string) => {
     setValidating(playerId);
-    await onValidate(playerId, playerName);
+    await onValidate(playerId);
     setValidating(null);
   };
 
@@ -34,9 +34,9 @@ export default function PlayerList({ players, onValidate }: PlayerListProps) {
       </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xxl:grid-cols-5 gap-6">
-        {players.map((player) => (
+        {players.map((player, idx) => (
           <button
-            key={player.id}
+            key={`${player.id}-${idx}`}
             onClick={() => handleValidateClick(player.id, player.name)}
             disabled={validating === player.id}
             className={`card-elevated-lg bg-cocoa rounded-xl p-6 text-left transition-all hover:ring-2 hover:ring-gold/50 active:brightness-95 group relative ${
@@ -84,7 +84,7 @@ export default function PlayerList({ players, onValidate }: PlayerListProps) {
             <div className="bg-cocoa-dark/50 rounded-lg p-3">
               <p className="text-[10px] text-ivory/30 uppercase tracking-widest mb-1.5 font-bold">Início da Cartela</p>
               <div className="flex gap-1.5 flex-wrap">
-                {player.card.slice(0, 10).map((num, i) => (
+                {player.card?.slice(0, 10).map((num, i) => (
                   <span
                     key={i}
                     className="text-sm font-mono bg-ivory/10 text-ivory/90 px-2 py-0.5 rounded font-bold border border-ivory/5"
