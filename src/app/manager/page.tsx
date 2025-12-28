@@ -41,18 +41,18 @@ function ManagerContent() {
     : '';
 
   return (
-    <div className="min-h-screen bg-gradient-cocoa p-4 md:p-6 flex flex-col">
+    <div className="h-screen bg-gradient-cocoa p-2 sm:p-4 md:p-6 flex flex-col overflow-hidden">
       {/* settings and header ... */}
-      <div className="fixed top-4 right-4 z-20 flex gap-2">
+      <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-20 flex gap-1 sm:gap-2">
         <button
-          className="card-elevated bg-ivory/90 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center text-cocoa hover:brightness-95 transition-all hover:scale-105"
+          className="card-elevated bg-ivory/90 backdrop-blur rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-cocoa hover:brightness-95 transition-all hover:scale-105 text-sm sm:text-base"
           onClick={() => setActiveView('qr')}
           title="QR Code de Entrada"
         >
           📱
         </button>
         <button
-          className="card-elevated bg-ivory/90 backdrop-blur rounded-full w-12 h-12 flex items-center justify-center text-cocoa hover:brightness-95 transition-all hover:scale-105"
+          className="card-elevated bg-ivory/90 backdrop-blur rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-cocoa hover:brightness-95 transition-all hover:scale-105 text-sm sm:text-base"
           onClick={() => setSettingsOpen(true)}
         >
           ⚙️
@@ -64,19 +64,19 @@ function ManagerContent() {
         isOpen={activeView === 'qr'}
         onClose={() => setActiveView('none')}
       >
-        <div className="flex flex-col items-center justify-center p-8 bg-ivory-warm rounded-3xl shadow-xl">
-          <p className="text-cocoa font-display font-semibold mb-8 text-center text-xl">
+        <div className="flex flex-col items-center justify-center p-4 sm:p-8 bg-ivory-warm rounded-2xl sm:rounded-3xl shadow-xl max-w-sm mx-auto mt-4 sm:mt-8">
+          <p className="text-cocoa font-display font-semibold mb-4 sm:mb-8 text-center text-base sm:text-xl">
             Aponte a câmera para participar:
           </p>
-          <div className="p-6 bg-white rounded-2xl shadow-inner border-4 border-gold-light/20">
+          <div className="p-3 sm:p-6 bg-white rounded-xl sm:rounded-2xl shadow-inner border-2 sm:border-4 border-gold-light/20">
              {/* @ts-ignore */}
-            <QRCodeSVG value={joinUrl} size={256} />
+            <QRCodeSVG value={joinUrl} size={200} className="w-[180px] h-[180px] sm:w-[256px] sm:h-[256px]" />
           </div>
-          <p className="mt-8 text-sm text-cocoa-light break-all text-center max-w-xs font-mono bg-white/50 p-3 rounded-lg border border-cocoa-light/10">
+          <p className="mt-4 sm:mt-8 text-xs sm:text-sm text-cocoa-light break-all text-center max-w-xs font-mono bg-white/50 p-2 sm:p-3 rounded-lg border border-cocoa-light/10">
             {joinUrl}
           </p>
           <button 
-            className="mt-8 btn btn-primary px-8"
+            className="mt-4 sm:mt-8 btn btn-primary px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base"
             onClick={() => setActiveView('none')}
           >
             Fechar
@@ -84,23 +84,32 @@ function ManagerContent() {
         </div>
       </ViewOverlay>
 
-      <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col min-h-0 space-y-6">
-        <div className="text-center fade-in-up py-4">
-          <h1 className="text-4xl md:text-6xl font-display font-bold text-gold-light mb-2 drop-shadow-sm">
+      <div className="max-w-7xl w-full mx-auto flex-1 flex flex-col min-h-0">
+        {/* Header - compact on mobile */}
+        <div className="text-center fade-in-up py-1 sm:py-4">
+          <h1 className="text-2xl sm:text-4xl md:text-6xl font-display font-bold text-gold-light mb-1 drop-shadow-sm">
             Painel do Coordenador
           </h1>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-2">
              <span className={`w-2 h-2 rounded-full ${host.isConnected ? 'bg-emerald-400' : 'bg-crimson animate-pulse'}`} />
-             <p className="text-sm font-medium text-ivory/60 tracking-widest uppercase">
-               {host.isConnected ? 'Sistemas Online' : 'Sincronizando...'}
+             <p className="text-xs sm:text-sm font-medium text-ivory/60 tracking-widest uppercase">
+               {host.isConnected ? 'Online' : 'Sincronizando...'}
              </p>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
-          <div className="w-full lg:w-3/4 flex flex-col gap-6 min-h-0">
+        {/* Main content - mobile-first stacked layout */}
+        {/* When game is active, stretch to fill; otherwise natural height */}
+        <div className={`flex-1 flex flex-col gap-2 sm:gap-4 lg:flex-row lg:gap-6 min-h-0 ${
+          host.status === 'active' && host.currentNumber ? '' : 'lg:items-start'
+        }`}>
+          {/* Left column: Current number + Controls */}
+          <div className={`w-full lg:w-3/4 flex flex-col gap-2 sm:gap-4 ${
+            host.status === 'active' && host.currentNumber ? 'min-h-0' : ''
+          }`}>
+            {/* Current Number - prominent on mobile */}
             {host.status === 'active' && host.currentNumber && (
-              <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="animate-in fade-in slide-in-from-top-4 duration-500 shrink-0">
                 <CurrentNumber 
                   number={host.currentNumber} 
                   onExpand={() => setActiveView('number-focus')}
@@ -108,8 +117,11 @@ function ManagerContent() {
               </div>
             )}
 
-            <div className="flex-1 flex flex-col lg:flex-row gap-6 fade-in-up stagger-2 min-h-0">
-              <div className="w-full lg:w-1/2">
+            {/* Controls row - side by side on mobile landscape, stacked on portrait */}
+            <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 ${
+              host.status === 'active' && host.currentNumber ? 'flex-1 min-h-0' : ''
+            }`}>
+              <div className="min-h-[200px] sm:min-h-0 sm:h-full">
                 <GameControls
                   sessionStatus={host.status}
                   currentMode={host.mode}
@@ -122,9 +134,11 @@ function ManagerContent() {
                   drawnCount={host.drawnNumbers.length}
                   totalNumbers={75}
                   drawing={host.isBusy}
+                  className="h-full"
                 />
               </div>
-              <div className="w-full lg:w-1/2">
+              {/* Player panel - hidden on very small screens, shown on sm+ */}
+              <div className="hidden sm:block h-full">
                 <PlayerStatusPanel 
                   players={host.players} 
                   onExpand={() => setActiveView('players')}
@@ -133,12 +147,25 @@ function ManagerContent() {
             </div>
           </div>
           
-          <div className="w-full lg:w-1/4">
+          {/* Right column: Recent numbers */}
+          <div className={`w-full lg:w-1/4 ${
+            host.status === 'active' && host.currentNumber ? 'min-h-0 lg:flex lg:flex-col' : ''
+          }`}>
             <RecentNumbers 
               numbers={host.drawnNumbers} 
               onExpand={() => setActiveView('history')}
             />
           </div>
+        </div>
+
+        {/* Mobile-only: Quick player count badge */}
+        <div className="sm:hidden flex justify-center">
+          <button
+            onClick={() => setActiveView('players')}
+            className="px-4 py-2 bg-cocoa-light rounded-full text-ivory text-sm font-sans flex items-center gap-2"
+          >
+            <span>👥</span> {host.players.length} jogadores
+          </button>
         </div>
       </div>
 

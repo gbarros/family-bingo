@@ -46,13 +46,13 @@ export default function BingoCard({
   return (
     <div className="w-full max-w-lg mx-auto">
       {/* Card container with elevated style */}
-      <div className="card-elevated-lg bg-ivory rounded-2xl p-3 sm:p-4 md:p-6">
-        {/* Header with column letters */}
-        <div className="grid grid-cols-5 gap-1 md:gap-2 mb-2">
+      <div className="card-elevated-lg bg-ivory rounded-xl sm:rounded-2xl p-2 sm:p-4 md:p-6">
+        {/* Header with column letters - ensure visibility */}
+        <div className="grid grid-cols-5 gap-1 md:gap-2 mb-1 sm:mb-2">
           {COLUMN_LETTERS.map((letter) => (
             <div
               key={letter}
-              className="text-center text-xl sm:text-2xl md:text-3xl font-display font-bold text-crimson"
+              className="text-center text-2xl sm:text-2xl md:text-3xl font-display font-bold text-crimson drop-shadow-sm"
             >
               {letter}
             </div>
@@ -114,8 +114,8 @@ export default function BingoCard({
           )}
         </div>
 
-        {/* Legend */}
-        <div className="mt-4 flex flex-wrap gap-3 text-xs md:text-sm font-sans">
+        {/* Legend - hidden on mobile to maximize card space */}
+        <div className="hidden sm:flex mt-3 flex-wrap gap-3 text-xs md:text-sm font-sans">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-gold border-2 border-gold-dark rounded"></div>
             <span className="text-cocoa">Marcado</span>
@@ -125,11 +125,6 @@ export default function BingoCard({
             <span className="text-cocoa">Não marcado</span>
           </div>
         </div>
-      </div>
-
-      {/* Tap instruction */}
-      <div className="mt-4 text-center text-sm text-ivory font-sans font-semibold">
-        <p>Toque nos números para marcar sua cartela</p>
       </div>
     </div>
   );

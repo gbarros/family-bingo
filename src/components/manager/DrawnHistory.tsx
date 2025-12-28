@@ -10,8 +10,8 @@ interface DrawnHistoryProps {
 export default function DrawnHistory({ numbers }: DrawnHistoryProps) {
   if (numbers.length === 0) {
     return (
-      <div className="card-elevated bg-cocoa-light rounded-xl p-6 text-center">
-        <p className="text-ivory font-sans text-lg">
+      <div className="card-elevated bg-cocoa-light rounded-xl p-4 sm:p-6 text-center">
+        <p className="text-ivory font-sans text-base sm:text-lg">
           Nenhum número sorteado ainda
         </p>
       </div>
@@ -45,23 +45,23 @@ export default function DrawnHistory({ numbers }: DrawnHistoryProps) {
   const recentSet = new Set(numbers.slice(-5));
 
   return (
-    <div className="card-elevated-lg bg-cocoa-light rounded-xl p-8 md:p-12 w-full">
-      <h2 className="text-3xl font-display font-bold text-gold-light mb-8 text-center uppercase tracking-widest border-b border-ivory/10 pb-6">
-        Números Sorteados ({numbers.length}/75)
+    <div className="card-elevated-lg bg-cocoa-light rounded-xl p-4 sm:p-6 md:p-8 w-full">
+      <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-gold-light mb-4 sm:mb-6 text-center uppercase tracking-widest border-b border-ivory/10 pb-3 sm:pb-6">
+        Sorteados ({numbers.length}/75)
       </h2>
 
       {/* By column view */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 md:gap-6">
+      <div className="grid grid-cols-5 gap-2 sm:gap-4 md:gap-6">
         {COLUMN_LETTERS.map((letter) => (
           <div key={letter}>
             <div
-              className={`text-center font-display font-bold text-4xl mb-4 ${
+              className={`text-center font-display font-bold text-2xl sm:text-3xl md:text-4xl mb-2 sm:mb-4 ${
                 columnColors[letter]
-              } rounded-xl py-4 shadow-xl`}
+              } rounded-lg sm:rounded-xl py-2 sm:py-4 shadow-xl`}
             >
               {letter}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               {byColumn[letter].map((num, i) => {
                 const isRecent = recentSet.has(num);
                 const isVeryLatest = numbers[numbers.length - 1] === num;
@@ -70,13 +70,13 @@ export default function DrawnHistory({ numbers }: DrawnHistoryProps) {
                   <div
                     key={`${letter}-${num}-${i}`}
                     className={`
-                      text-center py-3 rounded-xl font-mono font-bold text-2xl
+                      text-center py-1.5 sm:py-2 md:py-3 rounded-lg sm:rounded-xl font-mono font-bold text-sm sm:text-lg md:text-2xl
                       transition-all duration-300
                       ${
                         isVeryLatest
-                          ? `${columnColors[letter]} ring-4 ring-gold glow-pulse`
+                          ? `${columnColors[letter]} ring-2 sm:ring-4 ring-gold glow-pulse`
                           : isRecent
-                            ? `${columnColors[letter]} ring-2 ring-gold/30 opacity-90`
+                            ? `${columnColors[letter]} ring-1 sm:ring-2 ring-gold/30 opacity-90`
                             : 'bg-cocoa text-ivory/80 hover:bg-cocoa-dark hover:text-ivory'
                       }
                     `}
@@ -90,12 +90,12 @@ export default function DrawnHistory({ numbers }: DrawnHistoryProps) {
         ))}
       </div>
 
-      {/* Latest numbers */}
-      <div className="mt-12 pt-8 border-t border-ivory/10">
-        <p className="text-gold-light text-lg font-display font-bold mb-4 uppercase tracking-wider">
-          Ordem do Sorteio (Últimos 10)
+      {/* Latest numbers - compact on mobile */}
+      <div className="mt-6 sm:mt-8 md:mt-12 pt-4 sm:pt-6 md:pt-8 border-t border-ivory/10">
+        <p className="text-gold-light text-sm sm:text-base md:text-lg font-display font-bold mb-2 sm:mb-4 uppercase tracking-wider">
+          Últimos Sorteados
         </p>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 md:gap-3">
           {numbers.slice(-10).reverse().map((num, i) => {
             const letter = getColumnLetter(num);
             const isFirst = i === 0;
@@ -103,8 +103,8 @@ export default function DrawnHistory({ numbers }: DrawnHistoryProps) {
               <div
                 key={`recent-${num}-${i}`}
                 className={`
-                  ${columnColors[letter]} px-5 py-3 rounded-xl font-mono font-bold text-xl shadow-lg
-                  ${isFirst ? 'ring-4 ring-gold scale-110 mx-2 animate-bounce-subtle' : ''}
+                  ${columnColors[letter]} px-2 sm:px-3 md:px-5 py-1 sm:py-2 md:py-3 rounded-lg sm:rounded-xl font-mono font-bold text-sm sm:text-base md:text-xl shadow-lg
+                  ${isFirst ? 'ring-2 sm:ring-4 ring-gold scale-105 sm:scale-110' : ''}
                 `}
               >
                 {letter}-{num}

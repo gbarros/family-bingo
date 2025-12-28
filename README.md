@@ -73,6 +73,8 @@ yarn dev:server
 Gera arquivos estáticos na pasta `out/`.
 ```bash
 yarn build:p2p
+# Para testar localmente os arquivos estáticos:
+npx serve out
 ```
 
 #### Modo Servidor (Docker/Node.js)

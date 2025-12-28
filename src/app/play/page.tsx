@@ -36,7 +36,7 @@ function PlayerContent() {
     <>
       <ChristmasBackground />
 
-      <div className="min-h-screen p-4 md:p-6 relative z-10">
+      <div className="min-h-screen p-2 md:p-6 relative z-10">
         {/* Settings gear */}
         <div className="fixed top-4 right-4 z-20">
           <button
@@ -84,13 +84,13 @@ function PlayerContent() {
           </div>
         )}
 
-        <div className="max-w-6xl mx-auto space-y-4 md:space-y-8 py-8 md:py-12">
-          {/* Header */}
-          <div className="text-center space-y-2 animate-in fade-in slide-in-from-top-4 duration-700">
-            <h1 className="text-5xl md:text-7xl font-display font-bold text-gradient-gold drop-shadow-sm">
+        <div className="max-w-6xl mx-auto space-y-2 md:space-y-6 py-1 md:py-8">
+          {/* Header - compact on mobile */}
+          <div className="text-center space-y-0.5 md:space-y-2 animate-in fade-in slide-in-from-top-4 duration-700">
+            <h1 className="text-3xl md:text-7xl font-display font-bold text-gradient-gold drop-shadow-sm">
               Bingo de Natal
             </h1>
-            <p className="text-xl md:text-2xl font-light text-ivory/90 tracking-wide">
+            <p className="text-base md:text-2xl font-light text-ivory/90 tracking-wide">
               Boa sorte, <span className="font-bold text-gold-light underline decoration-gold-light/30 underline-offset-4">{game.playerName}</span>! ✨
             </p>
             {!game.isConnected && (
@@ -106,8 +106,8 @@ function PlayerContent() {
             )}
           </div>
 
-          {/* Game status announcements */}
-          <div className="max-w-md mx-auto">
+          {/* Game status announcements - compact */}
+          <div className="max-w-sm mx-auto">
             {game.gameStatus === 'finished' && (
               <div className="card-elevated-lg bg-gradient-to-br from-crimson to-crimson-dark rounded-2xl p-8 text-center shadow-2xl animate-in zoom-in-95 duration-500">
                 <div className="text-5xl mb-4">🎉</div>
@@ -146,14 +146,6 @@ function PlayerContent() {
                  onToggleMark={game.mark}
                />
             </div>
-          </div>
-          
-          {/* Footer branding */}
-          <div className="pt-12 text-center opacity-30 select-none">
-             <div className="h-px w-24 bg-ivory mx-auto mb-4" />
-             <p className="text-ivory text-xs font-light tracking-[0.3em] uppercase">
-                Family Bingo • Premium P2P
-             </p>
           </div>
         </div>
       </div>

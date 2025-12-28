@@ -33,16 +33,16 @@ export default function RecentNumbers({ numbers, onExpand }: RecentNumbersProps)
 
   if (visible.length === 0) {
     return (
-      <div className="h-full card-elevated-lg bg-cocoa-light/20 border-2 border-dashed border-ivory/10 rounded-xl flex items-center justify-center p-6 text-center">
-         <p className="text-ivory/20 font-sans font-semibold">Histórico de<br/>Sorteio</p>
+      <div className="h-full card-elevated-lg bg-cocoa-light/20 border-2 border-dashed border-ivory/10 rounded-xl flex items-center justify-center p-4 sm:p-6 text-center">
+         <p className="text-ivory/20 font-sans font-semibold text-sm sm:text-base">Histórico de<br/>Sorteio</p>
       </div>
     );
   }
 
   return (
-    <div className="h-full card-elevated-lg bg-cocoa-light rounded-xl p-4 overflow-hidden flex flex-col relative">
-      <div className="flex items-center justify-between mb-3 shrink-0">
-        <h3 className="text-lg font-display font-bold text-gold-light uppercase tracking-wider">
+    <div className="card-elevated-lg bg-cocoa-light rounded-xl p-3 sm:p-4 overflow-hidden flex flex-col h-full relative">
+      <div className="flex items-center justify-between mb-2 sm:mb-3 shrink-0">
+        <h3 className="text-base sm:text-lg font-display font-bold text-gold-light uppercase tracking-wider">
           Últimos
         </h3>
         {onExpand && (
@@ -56,11 +56,26 @@ export default function RecentNumbers({ numbers, onExpand }: RecentNumbersProps)
         )}
       </div>
       
-      <div className="flex-1 relative overflow-hidden">
+      {/* Mobile: horizontal scroll */}
+      <div className="lg:hidden overflow-x-auto pb-2">
+        <div className="flex gap-2">
+          {visible.map((num, i) => (
+            <div 
+              key={`${num}-${i}`}
+              className="shrink-0 w-12 h-12 rounded-full bg-ivory text-cocoa font-display font-bold text-xl flex items-center justify-center shadow-lg"
+            >
+              {num}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop: vertical scroll with fixed height */}
+      <div className="hidden lg:flex flex-1 relative overflow-hidden flex-col min-h-0">
         {/* Gradient mask for fading out at bottom */}
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-cocoa-light to-transparent z-10 pointer-events-none"></div>
 
-        <div className="space-y-3 relative z-0">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-3 relative z-0 pb-8">
           {visible.map((num, i) => (
             <div 
               key={`${num}-${i}`}
