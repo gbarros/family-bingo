@@ -75,14 +75,14 @@ export default function RecentNumbers({ numbers, onExpand }: RecentNumbersProps)
         {/* Gradient mask for fading out at bottom */}
         <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-cocoa-light to-transparent z-10 pointer-events-none"></div>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-3 relative z-0 pb-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-2 relative z-0 pb-6">
           {visible.map((num, i) => (
             <div 
               key={`${num}-${i}`}
               className="flex items-center justify-center animate-in slide-in-from-top-4 fade-in duration-500 fill-mode-backwards"
               style={{ animationDelay: `${i * 100}ms` }}
             >
-               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-ivory via-gold-light/80 to-gold text-cocoa font-display font-bold text-3xl flex items-center justify-center shadow-lg shadow-[0_0_20px_rgba(253,230,138,0.5)] ring-1 ring-gold/40 transform transition-transform hover:scale-105 sheen">
+               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-ivory via-gold-light/80 to-gold text-cocoa font-display font-bold text-2xl flex items-center justify-center shadow-lg shadow-[0_0_18px_rgba(253,230,138,0.45)] ring-1 ring-gold/40 transform transition-transform hover:scale-105 sheen">
                  {num}
                </div>
             </div>

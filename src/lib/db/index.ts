@@ -25,6 +25,46 @@ function ensureColumns(db: Database.Database) {
   }
 }
 
+function ensureSessionsSchema(db: Database.Database) {
+  try {
+    const row = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='sessions'").get() as {
+      sql?: string;
+    } | undefined;
+
+    if (!row?.sql) return;
+    if (!row.sql.includes('CHECK(game_mode')) return;
+
+    console.log('[DB] Migrating: Updating sessions.game_mode constraint');
+
+    db.exec('PRAGMA foreign_keys = OFF;');
+    const migrate = db.transaction(() => {
+      db.exec(`
+        ALTER TABLE sessions RENAME TO sessions_old;
+        CREATE TABLE sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            status TEXT NOT NULL CHECK(status IN ('waiting', 'active', 'finished')),
+            game_mode TEXT NOT NULL,
+            created_at INTEGER NOT NULL,
+            started_at INTEGER,
+            finished_at INTEGER,
+            winner_player_id INTEGER,
+            FOREIGN KEY (winner_player_id) REFERENCES players(id)
+        );
+        INSERT INTO sessions (id, status, game_mode, created_at, started_at, finished_at, winner_player_id)
+        SELECT id, status, game_mode, created_at, started_at, finished_at, winner_player_id FROM sessions_old;
+        DROP TABLE sessions_old;
+      `);
+    });
+    migrate();
+    db.exec('PRAGMA foreign_keys = ON;');
+  } catch (err) {
+    console.error('[DB] Sessions migration failed:', err);
+    try {
+      db.exec('PRAGMA foreign_keys = ON;');
+    } catch {}
+  }
+}
+
 const DB_PATH = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'bingo.db');
 
 let db: Database.Database | null = null;
@@ -53,6 +93,7 @@ export function getDatabase(): Database.Database {
 
     // Run migrations
     ensureColumns(db);
+    ensureSessionsSchema(db);
 
     // Initialize manager password if not exists
     initializeManagerPassword(db);

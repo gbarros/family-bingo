@@ -20,12 +20,29 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
     const peerRef = useRef<Peer | null>(null);
     const connRef = useRef<DataConnection | null>(null);
     const requestedNameRef = useRef<string | null>(null);
+    const deviceIdRef = useRef<string | null>(null);
 
     const retryCountRef = useRef(0);
     const MAX_RETRIES = 5;
 
     // Use a ref to always access the latest handler (fixes stale closure issue)
     const handleIncomingDataRef = useRef<(data: any) => void>(() => { });
+
+    const getDeviceId = () => {
+        if (deviceIdRef.current) return deviceIdRef.current;
+        if (typeof window === 'undefined') return null;
+        let stored = localStorage.getItem('bingoP2PDeviceId');
+        if (!stored) {
+            if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+                stored = crypto.randomUUID();
+            } else {
+                stored = `p2p-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+            }
+            localStorage.setItem('bingoP2PDeviceId', stored);
+        }
+        deviceIdRef.current = stored;
+        return stored;
+    };
 
     // Define the handler and keep the ref updated
     handleIncomingDataRef.current = (data: any) => {
@@ -36,12 +53,22 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
         switch (data.type) {
             case 'welcome':
                 requestedNameRef.current = null;
+                const baseMarkings = Array.isArray(data.markings)
+                    ? data.markings
+                    : new Array(25).fill(false);
+                if (baseMarkings.length === 25) {
+                    baseMarkings[12] = true;
+                }
                 setState(prev => ({
                     ...prev,
                     playerId: String(data.playerId),
                     card: data.card,
-                    markings: new Array(25).fill(false).map((_, i) => i === 12),
+                    markings: baseMarkings.length === 25
+                        ? baseMarkings
+                        : new Array(25).fill(false).map((_, i) => i === 12),
                     isBusy: false,
+                    conflictData: null,
+                    error: undefined,
                     playerName: prev.playerName || localStorage.getItem('bingoLastPlayerName'),
                     // Sync with current game state from host
                     drawnNumbers: data.drawnNumbers || [],
@@ -105,6 +132,17 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
             case 'bingo':
                 setState(prev => ({ ...prev, winner: { name: data.playerName, pattern: data.pattern } }));
                 break;
+            case 'conflict':
+                setState(prev => ({
+                    ...prev,
+                    conflictData: {
+                        existingDevice: data.existingDevice || 'Dispositivo desconhecido',
+                        alreadyConnected: !!data.alreadyConnected
+                    },
+                    error: undefined,
+                    isBusy: false
+                }));
+                break;
             case 'error':
                 setState(prev => ({ ...prev, error: data.message, isBusy: false }));
                 break;
@@ -122,7 +160,12 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
             const nameToJoin = requestedNameRef.current || localStorage.getItem('bingoLastPlayerName');
             if (nameToJoin) {
                 console.log('[P2P Client] Automatically joining/reconnecting as:', nameToJoin);
-                conn.send({ type: 'join', name: nameToJoin });
+                conn.send({
+                    type: 'join',
+                    name: nameToJoin,
+                    deviceId: getDeviceId(),
+                    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined
+                });
             }
         });
 
@@ -221,6 +264,27 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
         return () => clearInterval(monitor);
     }, [hostId, secret, state.isConnected, state.error, connect]);
 
+    // Reconnect when tab becomes visible (mobile app switch fix)
+    useEffect(() => {
+        if (!hostId) return;
+
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                retryCountRef.current = 0;
+                setState(prev => ({ ...prev, error: undefined }));
+                connect(hostId, secret);
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibility);
+        window.addEventListener('focus', handleVisibility);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibility);
+            window.removeEventListener('focus', handleVisibility);
+        };
+    }, [hostId, secret, connect]);
+
     // Initial connection
     useEffect(() => {
         if (hostId && !connRef.current) {
@@ -232,12 +296,23 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
         const trimmedName = name.trim();
         if (!trimmedName) return;
 
-        setState(prev => ({ ...prev, isBusy: true, playerName: trimmedName, error: undefined }));
+        setState(prev => ({
+            ...prev,
+            isBusy: true,
+            playerName: trimmedName,
+            error: undefined,
+            conflictData: null
+        }));
         requestedNameRef.current = trimmedName;
         localStorage.setItem('bingoLastPlayerName', trimmedName);
 
         if (connRef.current && connRef.current.open) {
-            connRef.current.send({ type: 'join', name: trimmedName });
+            connRef.current.send({
+                type: 'join',
+                name: trimmedName,
+                deviceId: getDeviceId(),
+                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined
+            });
         }
     };
 
@@ -256,7 +331,20 @@ export function useP2PGameClient(hostId?: string, secret?: string): GameClient {
         ...state,
         join,
         mark,
-        claim: async () => { },
+        claim: async (name: string) => {
+            const trimmedName = name.trim();
+            if (!trimmedName) return;
+
+            setState(prev => ({ ...prev, isBusy: true, error: undefined }));
+            if (connRef.current && connRef.current.open) {
+                connRef.current.send({
+                    type: 'claim',
+                    name: trimmedName,
+                    deviceId: getDeviceId(),
+                    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined
+                });
+            }
+        },
         reconnect: async () => {
             if (hostId) connect(hostId, secret);
         },

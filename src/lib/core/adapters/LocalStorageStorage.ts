@@ -61,6 +61,13 @@ export class LocalStorageStorage implements GameStorage {
         }
     }
 
+    async updateSessionMode(mode: GameMode): Promise<void> {
+        if (this.data.session) {
+            this.data.session.gameMode = mode;
+            this.save();
+        }
+    }
+
     async addDrawnNumber(number: number): Promise<void> {
         if (!this.data.drawnNumbers.includes(number)) {
             this.data.drawnNumbers.push(number);

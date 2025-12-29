@@ -6,7 +6,7 @@ export const createTablesSQL = `
 CREATE TABLE IF NOT EXISTS sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     status TEXT NOT NULL CHECK(status IN ('waiting', 'active', 'finished')),
-    game_mode TEXT NOT NULL CHECK(game_mode IN ('horizontal', 'vertical', 'diagonal', 'blackout')),
+    game_mode TEXT NOT NULL,
     created_at INTEGER NOT NULL,
     started_at INTEGER,
     finished_at INTEGER,

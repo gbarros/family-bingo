@@ -43,7 +43,7 @@ export class GameEngine {
         return newNumber;
     }
 
-    async registerPlayer(name: string, peerId: string, userAgent?: string): Promise<Player> {
+    async registerPlayer(name: string, peerId: string, userAgent?: string, deviceId?: string): Promise<Player> {
         // Create a stable ID from the player's name
         const stableId = `player-${name.toLowerCase().replace(/\s+/g, '-')}`;
 
@@ -58,7 +58,8 @@ export class GameEngine {
                 ...existingPlayer,
                 peerId: peerId,
                 lastActive: Date.now(),
-                userAgent: userAgent || existingPlayer.userAgent
+                userAgent: userAgent || existingPlayer.userAgent,
+                deviceId: deviceId || existingPlayer.deviceId
             };
 
             // Just update in place - no removal needed since ID stays the same
@@ -74,8 +75,9 @@ export class GameEngine {
             peerId: peerId,
             name,
             cardData: card,
-            markings: new Array(25).fill(false),
+            markings: new Array(25).fill(false).map((_, index) => index === 12),
             userAgent,
+            deviceId,
             lastActive: Date.now()
         };
 

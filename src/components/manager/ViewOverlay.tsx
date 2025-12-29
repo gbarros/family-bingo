@@ -10,10 +10,22 @@ interface ViewOverlayProps {
   onClose: () => void;
   children: ReactNode;
   minimal?: boolean;
+  withTopBar?: boolean;
 }
 
-export default function ViewOverlay({ title, isOpen, onClose, children, minimal = false }: ViewOverlayProps) {
+export default function ViewOverlay({
+  title,
+  isOpen,
+  onClose,
+  children,
+  minimal = false,
+  withTopBar = false
+}: ViewOverlayProps) {
   if (!isOpen) return null;
+
+  const closeTopClass = withTopBar ? 'top-16 sm:top-20' : 'top-3 sm:top-6';
+  const titleTopClass = withTopBar ? 'pt-16 sm:pt-20' : 'pt-4 sm:pt-8 md:pt-12';
+  const minimalTopClass = withTopBar ? 'pt-16 sm:pt-20' : '';
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-forest via-forest-dark to-forest texture-overlay animate-in fade-in duration-200">
@@ -22,20 +34,20 @@ export default function ViewOverlay({ title, isOpen, onClose, children, minimal 
       {/* Absolute Close Button */}
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 sm:top-6 sm:right-6 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-ivory/10 flex items-center justify-center text-ivory hover:bg-ivory/20 transition-all z-[60] backdrop-blur-sm border border-ivory/10 hover:scale-110"
+        className={`absolute ${closeTopClass} right-3 sm:right-6 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-ivory/10 flex items-center justify-center text-ivory hover:bg-ivory/20 transition-all z-[80] backdrop-blur-sm border border-ivory/10 hover:scale-110`}
         aria-label="Fechar"
       >
         <span className="text-xl sm:text-2xl font-bold">✕</span>
       </button>
 
       {!minimal && (
-        <div className="px-4 pt-4 sm:px-8 sm:pt-8 md:px-12 md:pt-12 shrink-0 relative z-10">
+        <div className={`px-4 ${titleTopClass} sm:px-8 md:px-12 shrink-0 relative z-10`}>
           <h2 className="text-xl sm:text-3xl font-display font-bold text-gold-light uppercase tracking-widest">{title}</h2>
         </div>
       )}
 
       {/* Content */}
-      <div className={`flex-1 overflow-auto relative z-10 ${minimal ? 'p-2 sm:p-4' : 'px-4 pb-4 sm:px-8 sm:pb-8 md:px-12 md:pb-12'}`}>
+      <div className={`flex-1 overflow-auto relative z-10 ${minimal ? `p-2 sm:p-4 ${minimalTopClass}` : 'px-4 pb-4 sm:px-8 sm:pb-8 md:px-12 md:pb-12'}`}>
         <div className="max-w-7xl mx-auto min-h-full">
           {children}
         </div>

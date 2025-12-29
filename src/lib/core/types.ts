@@ -14,6 +14,7 @@ export interface Player {
     name: string;
     cardData: number[];   // 25 numbers
     markings: boolean[];  // 25 booleans
+    deviceId?: string;
     userAgent?: string;
     lastActive?: number;
 }
@@ -32,6 +33,7 @@ export interface GameStorage {
     getSession(): Promise<GameState | null>;
     createSession(id: string, mode: GameMode): Promise<GameState>;
     updateSessionStatus(status: 'active' | 'finished'): Promise<void>;
+    updateSessionMode(mode: GameMode): Promise<void>;
 
     // Numbers
     addDrawnNumber(number: number): Promise<void>;

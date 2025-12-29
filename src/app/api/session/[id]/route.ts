@@ -7,6 +7,22 @@ import type { UpdateSessionRequest } from '@/types/api';
 
 export const runtime = 'nodejs';
 
+const VALID_GAME_MODES = new Set(['horizontal', 'vertical', 'diagonal', 'blackout']);
+
+function normalizeGameMode(mode?: string | null): string | null {
+  if (!mode) return null;
+  const rawParts = mode.split(',').map(part => part.trim()).filter(Boolean);
+  const parts: string[] = [];
+  for (const part of rawParts) {
+    if (!parts.includes(part)) parts.push(part);
+  }
+
+  if (parts.length === 0) return null;
+  if (parts.some(part => !VALID_GAME_MODES.has(part))) return null;
+  if (parts.includes('blackout') && parts.length > 1) return null;
+  return parts.join(',');
+}
+
 /**
  * PATCH /api/session/[id] - Update session status or game mode
  */
@@ -38,11 +54,19 @@ export async function PATCH(
 
     // Update game mode if provided
     if (body.gameMode) {
-      updateSessionGameMode(sessionId, body.gameMode as any);
+      const normalizedGameMode = normalizeGameMode(body.gameMode);
+      if (!normalizedGameMode) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid game mode' },
+          { status: 400 }
+        );
+      }
+
+      updateSessionGameMode(sessionId, normalizedGameMode as any);
 
       broadcast({
         type: 'gameStateChanged',
-        data: { status: '', mode: body.gameMode },
+        data: { status: '', mode: normalizedGameMode },
       });
     }
 

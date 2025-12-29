@@ -26,7 +26,45 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
     const peerRef = useRef<Peer | null>(null);
     const connectionsRef = useRef<Map<string, DataConnection>>(new Map());
     const lastPingRef = useRef<Map<string, number>>(new Map());
+    const peerToPlayerRef = useRef<Map<string, string>>(new Map());
+    const playerPeersRef = useRef<Map<string, Set<string>>>(new Map());
     const secretRef = useRef<string>(uuidv4().slice(0, 8));
+
+    const linkPeerToPlayer = useCallback((playerId: string, peerId: string) => {
+        peerToPlayerRef.current.set(peerId, playerId);
+        const peers = playerPeersRef.current.get(playerId) || new Set<string>();
+        peers.add(peerId);
+        playerPeersRef.current.set(playerId, peers);
+    }, []);
+
+    const unlinkPeer = useCallback((peerId: string) => {
+        const playerId = peerToPlayerRef.current.get(peerId);
+        if (!playerId) return;
+        const peers = playerPeersRef.current.get(playerId);
+        if (peers) {
+            peers.delete(peerId);
+            if (peers.size === 0) {
+                playerPeersRef.current.delete(playerId);
+            }
+        }
+        peerToPlayerRef.current.delete(peerId);
+    }, []);
+
+    const isPeerActive = useCallback((peerId: string) => {
+        const conn = connectionsRef.current.get(peerId);
+        const lastPing = lastPingRef.current.get(peerId) || 0;
+        const isSilent = Date.now() - lastPing > 25000;
+        return !!conn?.open && !isSilent;
+    }, []);
+
+    const isPlayerConnected = useCallback((playerId: string) => {
+        const peers = playerPeersRef.current.get(playerId);
+        if (!peers || peers.size === 0) return false;
+        for (const peerId of peers) {
+            if (isPeerActive(peerId)) return true;
+        }
+        return false;
+    }, [isPeerActive]);
 
     // Load persisted IDs on mount
     useEffect(() => {
@@ -73,7 +111,8 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                 session_id: 1,
                 card_data: JSON.stringify(p.cardData),
                 card: p.cardData,
-                connected: connectionsRef.current.get(p.peerId)?.open ?? false
+                connected: isPlayerConnected(p.id),
+                deviceCount: playerPeersRef.current.get(p.id)?.size || 0
             }));
         };
 
@@ -96,10 +135,13 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
 
             setState(prev => {
                 const newPlayerList = players.map((p: any) => {
-                    const conn = connectionsRef.current.get(p.peerId);
-                    const lastPing = lastPingRef.current.get(p.peerId) || 0;
-                    const isSilent = now - lastPing > 25000; // 25 seconds mark as offline
-
+                    const peers = playerPeersRef.current.get(p.id) || new Set<string>();
+                    const isConnected = Array.from(peers).some(peerId => {
+                        const conn = connectionsRef.current.get(peerId);
+                        const lastPing = lastPingRef.current.get(peerId) || 0;
+                        const isSilent = now - lastPing > 25000;
+                        return (conn?.open ?? false) && !isSilent;
+                    });
                     return {
                         id: p.id,
                         name: p.name,
@@ -107,7 +149,8 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                         session_id: 1,
                         card_data: JSON.stringify(p.cardData),
                         card: p.cardData,
-                        connected: (conn?.open ?? false) && !isSilent
+                        connected: isConnected,
+                        deviceCount: peers.size
                     };
                 });
 
@@ -170,24 +213,28 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                 if (data.type === 'join') {
                     const name = data.name?.trim();
                     if (!name) return;
+                    const deviceId = data.deviceId;
+                    const userAgent = data.userAgent;
 
                     const players = await storage.getAllPlayers();
                     const existingPlayer = players.find(p => p.name.toLowerCase() === name.toLowerCase());
 
                     if (existingPlayer) {
-                        const conn = connectionsRef.current.get(existingPlayer.id);
-                        const isConnected = conn?.open ?? false;
-                        if (isConnected && existingPlayer.id !== conn?.peer) {
-                            conn?.send({
-                                type: 'error',
-                                message: 'Este nome já está sendo usado e o jogador está online.',
-                                conflict: true
+                        const sameDevice = deviceId && existingPlayer.deviceId === deviceId;
+                        const isConnected = isPlayerConnected(existingPlayer.id);
+                        if (!sameDevice && isConnected) {
+                            conn.send({
+                                type: 'conflict',
+                                message: 'Este nome já está sendo usado.',
+                                existingDevice: existingPlayer.userAgent || 'Dispositivo desconhecido',
+                                alreadyConnected: true
                             });
                             return;
                         }
                     }
 
-                    const player = await engine.registerPlayer(name, conn.peer);
+                    const player = await engine.registerPlayer(name, conn.peer, userAgent, deviceId);
+                    linkPeerToPlayer(player.id, conn.peer);
                     const session = await storage.getSession();
                     const drawnNumbers = await storage.getDrawnNumbers();
 
@@ -195,6 +242,29 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                         type: 'welcome',
                         playerId: player.id,
                         card: player.cardData,
+                        markings: player.markings,
+                        clientId: player.id,
+                        gameStatus: session?.status || 'waiting',
+                        drawnNumbers: drawnNumbers || []
+                    });
+                    syncPlayers();
+                }
+                if (data.type === 'claim') {
+                    const name = data.name?.trim();
+                    if (!name) return;
+                    const deviceId = data.deviceId;
+                    const userAgent = data.userAgent;
+
+                    const player = await engine.registerPlayer(name, conn.peer, userAgent, deviceId);
+                    linkPeerToPlayer(player.id, conn.peer);
+                    const session = await storage.getSession();
+                    const drawnNumbers = await storage.getDrawnNumbers();
+
+                    conn.send({
+                        type: 'welcome',
+                        playerId: player.id,
+                        card: player.cardData,
+                        markings: player.markings,
                         clientId: player.id,
                         gameStatus: session?.status || 'waiting',
                         drawnNumbers: drawnNumbers || []
@@ -202,15 +272,11 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                     syncPlayers();
                 }
                 if (data.type === 'mark') {
-                    const playerId = data.playerId; // We expect client to send their ID, or we infer from conn? 
-                    // Better to infer from the connection mapping or just trust the connected flow if simpler?
-                    // Actually, the client just sends { type: 'mark', position, marked }.
-                    // We need to find which player corresponds to this connection.
-                    // We can reverse lookup or store metadata.
-
-                    // Let's iterate players to find matching peerId
+                    const mappedPlayerId = peerToPlayerRef.current.get(conn.peer);
                     const players = await storage.getAllPlayers();
-                    const player = players.find(p => p.peerId === conn.peer);
+                    const player = mappedPlayerId
+                        ? players.find(p => p.id === mappedPlayerId)
+                        : players.find(p => p.peerId === conn.peer);
 
                     if (player) {
                         await engine.updatePlayerMarking(player.id, data.position, data.marked);
@@ -229,12 +295,14 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                 console.log(`[P2P Host] Connection closed: ${conn.peer}`);
                 connectionsRef.current.delete(conn.peer);
                 lastPingRef.current.delete(conn.peer);
+                unlinkPeer(conn.peer);
                 syncPlayers();
             });
 
             conn.on('error', (err) => {
                 connectionsRef.current.delete(conn.peer);
                 lastPingRef.current.delete(conn.peer);
+                unlinkPeer(conn.peer);
                 syncPlayers();
             });
         });
@@ -251,6 +319,7 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                     if (conn.open) conn.close();
                     connectionsRef.current.delete(peerId);
                     lastPingRef.current.delete(peerId);
+                    unlinkPeer(peerId);
                     changed = true;
                 }
             });
@@ -261,7 +330,7 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
         return () => {
             clearInterval(pruneInterval);
         };
-    }, [broadcast, enabled, persistedIds]);
+    }, [broadcast, enabled, persistedIds, isPlayerConnected, linkPeerToPlayer, unlinkPeer]);
 
     useEffect(() => {
         if (enabled) {
@@ -281,14 +350,17 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
 
             // Send new cards to each player (use gameReset, not welcome, to avoid overwriting status)
             updatedPlayers.forEach(player => {
-                const conn = connectionsRef.current.get(player.peerId);
-                if (conn && conn.open) {
-                    conn.send({
-                        type: 'gameReset',
-                        card: player.cardData,
-                        playerId: player.id
-                    });
-                }
+                const peers = playerPeersRef.current.get(player.id) || new Set<string>();
+                peers.forEach(peerId => {
+                    const conn = connectionsRef.current.get(peerId);
+                    if (conn && conn.open) {
+                        conn.send({
+                            type: 'gameReset',
+                            card: player.cardData,
+                            playerId: player.id
+                        });
+                    }
+                });
             });
 
             // Refresh UI
@@ -305,7 +377,8 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                     session_id: 1,
                     card_data: JSON.stringify(p.cardData),
                     card: p.cardData,
-                    connected: connectionsRef.current.get(p.peerId)?.open ?? false
+                    connected: isPlayerConnected(p.id),
+                    deviceCount: playerPeersRef.current.get(p.id)?.size || 0
                 } as any))
             }));
         }
@@ -325,6 +398,7 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
 
     const changeMode = async (mode: GameMode) => {
         setState(prev => ({ ...prev, mode }));
+        await storageRef.current?.updateSessionMode(mode);
         broadcast('gameStateChanged', { mode });
     };
 
@@ -350,14 +424,17 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
 
         // Send each player their new card
         updatedPlayers.forEach(player => {
-            const conn = connectionsRef.current.get(player.peerId);
-            if (conn && conn.open) {
-                conn.send({
-                    type: 'gameReset',
-                    card: player.cardData,
-                    playerId: player.id
-                });
-            }
+            const peers = playerPeersRef.current.get(player.id) || new Set<string>();
+            peers.forEach(peerId => {
+                const conn = connectionsRef.current.get(peerId);
+                if (conn && conn.open) {
+                    conn.send({
+                        type: 'gameReset',
+                        card: player.cardData,
+                        playerId: player.id
+                    });
+                }
+            });
         });
 
         // Also broadcast gameEnded for any clients that might not receive gameReset
@@ -377,7 +454,8 @@ export function useP2PGameHost(enabled: boolean = true): GameHost {
                 session_id: 1,
                 card_data: JSON.stringify(p.cardData),
                 card: p.cardData,
-                connected: connectionsRef.current.get(p.peerId)?.open ?? false
+                connected: isPlayerConnected(p.id),
+                deviceCount: playerPeersRef.current.get(p.id)?.size || 0
             } as any))
         }));
     };

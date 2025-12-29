@@ -13,6 +13,22 @@ import type { GameMode } from '@/types/game';
 
 export const runtime = 'nodejs';
 
+const VALID_GAME_MODES = new Set(['horizontal', 'vertical', 'diagonal', 'blackout']);
+
+function normalizeGameMode(mode?: string | null): string | null {
+  if (!mode) return null;
+  const rawParts = mode.split(',').map(part => part.trim()).filter(Boolean);
+  const parts: string[] = [];
+  for (const part of rawParts) {
+    if (!parts.includes(part)) parts.push(part);
+  }
+
+  if (parts.length === 0) return null;
+  if (parts.some(part => !VALID_GAME_MODES.has(part))) return null;
+  if (parts.includes('blackout') && parts.length > 1) return null;
+  return parts.join(',');
+}
+
 /**
  * GET /api/session - Get active session with players and drawn numbers
  */
@@ -85,20 +101,21 @@ export async function POST(request: NextRequest) {
   try {
     const body: CreateSessionRequest = await request.json();
     const { gameMode } = body;
+    const normalizedGameMode = normalizeGameMode(gameMode);
 
-    if (!gameMode || !['horizontal', 'vertical', 'diagonal', 'blackout'].includes(gameMode)) {
+    if (!normalizedGameMode) {
       return NextResponse.json(
         { success: false, error: 'Invalid game mode' },
         { status: 400 }
       );
     }
 
-    const session = createSession(gameMode as GameMode);
+    const session = createSession(normalizedGameMode as GameMode);
 
     // Broadcast session created
     broadcast({
       type: 'gameStateChanged',
-      data: { status: 'waiting', mode: gameMode },
+      data: { status: 'waiting', mode: normalizedGameMode },
     });
 
     return NextResponse.json({

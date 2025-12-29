@@ -28,6 +28,12 @@ export class MemoryStorage implements GameStorage {
         }
     }
 
+    async updateSessionMode(mode: GameMode): Promise<void> {
+        if (this.session) {
+            this.session.gameMode = mode;
+        }
+    }
+
     async addDrawnNumber(number: number): Promise<void> {
         this.drawnNumbers.push(number);
         if (this.session) {
